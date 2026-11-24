@@ -20,7 +20,7 @@ export interface Equipment {
 
 export type ClientInput = Pick<Client, 'name' | 'phone' | 'email'>
 export type EquipmentInput = Pick<Equipment, 'clientId' | 'type' | 'brand' | 'model' | 'serial'>
-export type Errors = Partial<Record<keyof ClientInput | keyof EquipmentInput | 'contact', string>>
+export type Errors = Partial<Record<keyof ClientInput | keyof EquipmentInput | 'contact' | 'equipmentCode' | 'problem', string>>
 export const EQUIPMENT_TYPES = ['Notebook', 'Computador', 'Celular', 'Tablet', 'Impressora', 'Monitor', 'Outro']
 
 export function phoneDigits(value: string): string {

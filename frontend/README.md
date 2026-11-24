@@ -1,6 +1,6 @@
-# SysOS — Frontend integrado à API (CRUD de clientes e equipamentos)
+# SysOS — Frontend integrado à API (clientes, equipamentos e ordens de serviço)
 
-React, TypeScript e Vite, com interface voltada a computadores e CRUD completo de clientes e equipamentos. O frontend usa a API Express em `../backend`; clientes e equipamentos são persistidos pelo backend, sem cadastro ou cache em `localStorage`.
+React, TypeScript e Vite, com interface voltada a computadores, CRUD completo de clientes/equipamentos e abertura/consulta de ordens de serviço. O frontend usa a API Express em `../backend`; clientes e equipamentos são persistidos pelo backend, sem cadastro ou cache em `localStorage`.
 
 ## Executar
 
@@ -72,6 +72,48 @@ Com token de **ATENDENTE**, abra os detalhes do cliente pelo nome nos resultados
 PUT e DELETE retornam JSON com o cadastro atualizado ou excluído (200). A interface só apresenta sucesso após essa resposta; não remove resultados de forma otimista em caso de erro.
 
 
+## Ordens de serviço
+
+O menu **Ordens de serviço** integra as rotas descritas em [ORDEM_SERVICO.md](../backend/docs/ORDEM_SERVICO.md). Atendentes abrem e consultam OS; técnicos podem consultar.
+
+### Abrir uma OS
+
+1. Clique em **Nova OS**, busque o cliente por nome/contato e selecione-o. Quando a busca não encontrar o cliente, é possível cadastrá-lo no próprio fluxo.
+2. Selecione um dos equipamentos retornados por `GET /api/clientes/:clienteId/equipamentos`. O código é sempre interpretado dentro do cliente escolhido. **Cadastrar equipamento deste cliente** permite incluir um aparelho e voltar à OS.
+3. Preencha o problema relatado (obrigatório, até 1000 caracteres) e clique em **Abrir ordem de serviço**.
+4. Se o backend responder `409 EQUIPAMENTO_COM_OS_EM_ABERTO`, a tela mostra número, status, data e problema das OS existentes. Só uma confirmação explícita permite repetir o envio com `confirmarOsEmAberto: true`. Alterar equipamento ou problema revoga a confirmação.
+5. A tela só apresenta sucesso após a resposta da API e abre a consulta da OS criada. Número, status inicial, data e autor são os valores do servidor; não são campos editáveis.
+
+Os formulários preservam os dados em falhas de gravação, impedem envio repetido e bloqueiam navegação/fechamento enquanto salvam. As consultas de equipamentos são canceladas ao trocar de cliente ou sair do fluxo.
+
+### Consultar
+
+- Ao abrir o menu, são carregadas as OS mais recentes (até 100, conforme a API).
+- **Buscar por número** usa `GET /api/ordens-servico/:numero` e funciona independentemente dos filtros de listagem.
+- **Selecionar cliente** abre uma busca de clientes, sem listagem global. Combine esse cliente com o **Status** e pressione **Aplicar filtros**; status usa igualdade exata, permite texto e sugere os estados conhecidos do backend. **Todas as OS** limpa os filtros.
+- A paginação percorre os resultados recebidos, em grupos de 10. O limite de 100 não representa a quantidade total cadastrada no banco.
+- **Detalhes** faz uma nova consulta por número e mostra cliente, contato, equipamento/código/série, problema relatado, status, data e funcionário responsável pela abertura.
+
+| Operação | Rota |
+|---|---|
+| Abrir | `POST /api/ordens-servico` |
+| Listar/filtrar | `GET /api/ordens-servico?clienteId=&status=` |
+| Consultar pelo número | `GET /api/ordens-servico/:numero` |
+
+O cadastro envia apenas `clienteId`, `equipamentoCodigoInterno`, `problemaRelatado` e, quando confirmado, `confirmarOsEmAberto`. Não há edição, exclusão ou atualização de status de OS nesta etapa.
+
+### Validação da integração
+
+Os testes de OS estão em `src/lib/orders.test.ts` e `src/components/Orders.test.tsx`. Cobrem URLs/payloads, filtros, confirmação de OS em aberto, mapeamento dos campos, permissões na interface e apresentação dos detalhes. Os testes de componentes usam renderização estática e não substituem uma verificação de cliques em navegador.
+
+```bash
+npm test -- --runTestsByPath src/lib/orders.test.ts src/components/Orders.test.tsx
+```
+
+Roteiro manual: abrir OS com equipamento do cliente; repetir a abertura para conferir o alerta e a confirmação; mudar o equipamento/problema para revogar a confirmação; consultar por número, filtrar por cliente/status, limpar filtros e conferir detalhes; usar token de técnico para consultar sem botão **Nova OS**; testar número inexistente, token expirado e falha de rede.
+
+O checkout usado nesta integração contém arquivos remanescentes não integrados de login, usuários e inativação. Eles já causavam erros no `npm run build` antes da alteração. Foram preservados. A aplicação importada por `main.tsx`, os arquivos novos e seus testes passaram na verificação de tipos isolada; o bundle Vite e as suítes do frontend atual/OS também foram validados. A suíte completa ainda inclui testes desses remanescentes que dependem de APIs ausentes neste checkout.
+
 ## CORS
 
 O backend permite por padrão as origens locais do Vite nas portas 5173 e 4173 (localhost e 127.0.0.1). Outra origem exige configurar `CORS_ORIGINS` no backend. As portas do frontend são fixas para evitar que o Vite troque silenciosamente de porta e seja bloqueado pelo CORS.
@@ -105,6 +147,9 @@ Roteiro manual com a API e um banco de desenvolvimento:
 
 ## Estrutura
 
+- `src/lib/orders.ts`: modelo e validação de ordens de serviço.
+- `src/components/OrderForm.tsx`: seleção de cliente/equipamento, abertura e confirmação de OS existentes.
+- `src/components/Orders.tsx`: listagem, filtros, paginação e consulta individual.
 - `src/lib/api.ts`: cliente HTTP e adaptação dos DTOs da API.
 - `src/lib/registry.ts`: modelos e validações do frontend, sem persistência local.
 - `src/components/SearchPanels.tsx`: consultas de clientes e equipamentos por cliente.
@@ -114,4 +159,4 @@ Roteiro manual com a API e um banco de desenvolvimento:
 - `src/components/Details.tsx`: consultas individuais.
 - `src/App.tsx`: navegação, seleção de cliente e acesso por token.
 
-O escopo agora inclui cadastro, consulta, alteração e exclusão de clientes e equipamentos, respeitando vínculos e histórico. Pagamento, entrega, estoque, administração da loja e implementação do login não integram esta etapa. Nenhuma skill específica ou subagente foi utilizado nesta adaptação.
+O escopo inclui CRUD de clientes/equipamentos e abertura/consulta de OS, respeitando vínculos e histórico. Pagamento, entrega, estoque, administração da loja e implementação do login não integram esta etapa. Nenhuma skill específica ou subagente foi utilizado nesta adaptação.
