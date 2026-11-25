@@ -2,11 +2,9 @@
 
 Aplicação web para gerenciamento de clientes, equipamentos e ordens de serviço de assistências técnicas de pequeno e médio porte, apresentada na disciplina de **Desenvolvimento Web**.
 
-<<<<<<< HEAD
+O objetivo da atividade é desenvolver uma aplicação com **React** que permita **enviar dados para uma API e exibir os dados recebidos dela**. O SysOS atende a esse objetivo com formulários e telas de consulta conectados a uma API REST em Node.js/Express, com persistência em PostgreSQL.
+
 O protótipo atual implementa **CRUD de clientes e equipamentos (cadastro, consulta, alteração e exclusão)**, com frontend integrado a uma API REST e persistência em PostgreSQL. Também permite abrir e consultar ordens de serviço, com filtros por cliente/status e confirmação de OS já em aberto.
-=======
-O protótipo atual implementa **CRUD de clientes e equipamentos (cadastro, consulta, alteração e exclusão)**, com frontend integrado a uma API REST e persistência em PostgreSQL. A API também disponibiliza abertura e consulta de ordens de serviço; as telas atuais do frontend integram o cadastro e a consulta de clientes e equipamentos.
->>>>>>> 3b26d1b (docs: alterar documentacao)
 
 ## Documentação
 
@@ -30,9 +28,6 @@ O protótipo atual implementa **CRUD de clientes e equipamentos (cadastro, consu
 
 Não há listagem global de clientes ou equipamentos. Primeiro o funcionário busca um cliente; depois, seleciona-o para consultar ou cadastrar seus equipamentos. Um equipamento é identificado pelo par **cliente + código interno**, portanto clientes diferentes podem ter equipamentos com o mesmo código.
 
-<<<<<<< HEAD
-Atualização de status da OS, diagnóstico, orçamento, reparo e conclusão técnica são etapas futuras. Pagamento, entrega física de aparelhos, estoque e administração da loja ficam fora do escopo atual do projeto.
-=======
 Atualização de status de OS, diagnóstico, orçamento, reparo e conclusão técnica ainda não estão implementados. Pagamento, entrega física de aparelhos, estoque e administração da loja ficam fora do escopo atual do projeto.
 
 ## Integração entre React e API
@@ -42,7 +37,6 @@ Os formulários do React mantêm os valores digitados em estado e os enviam em J
 As telas de consulta fazem requisições `GET` e exibem as respostas em listas e detalhes. Cadastro, edição e exclusão usam `POST`, `PUT` e `DELETE`. A interface apresenta carregamento, sucesso e falhas conforme a resposta da API; os cadastros ficam persistidos no PostgreSQL.
 
 Por exemplo, ao cadastrar um cliente, o frontend envia nome e contato para `POST /api/clientes`. Após a confirmação do servidor, mostra o cliente criado com o identificador recebido da API. Uma busca posterior usa `GET /api/clientes?busca=...` para recuperar e apresentar os dados.
->>>>>>> 3b26d1b (docs: alterar documentacao)
 
 ## Tecnologias
 

@@ -1,11 +1,6 @@
-<<<<<<< HEAD
-# SysOS — Frontend integrado à API (clientes, equipamentos e ordens de serviço)
-
-React, TypeScript e Vite, com interface voltada a computadores, CRUD completo de clientes/equipamentos e abertura/consulta de ordens de serviço. O frontend usa a API Express em `../backend`; clientes e equipamentos são persistidos pelo backend, sem cadastro ou cache em `localStorage`.
-=======
 # SysOS — Frontend
 
-Interface da aplicação SysOS, apresentada na disciplina de **Desenvolvimento Web** para demonstrar o uso de **React** com entrada e saída de dados de uma API. Desenvolvida com React, TypeScript e Vite, é voltada a computadores e oferece CRUD de clientes e equipamentos. O frontend usa a API Express em `../backend`; clientes e equipamentos são persistidos pelo backend, sem cadastro ou cache em `localStorage`.
+Interface da aplicação SysOS, apresentada na disciplina de **Desenvolvimento Web** para demonstrar o uso de **React** com entrada e saída de dados de uma API. Desenvolvida com React, TypeScript e Vite, é voltada a computadores e oferece CRUD de clientes e equipamentos, além de abertura e consulta de ordens de serviço. O frontend usa a API Express em `../backend`; clientes e equipamentos são persistidos pelo backend, sem cadastro ou cache em `localStorage`.
 
 ## Como o frontend se comunica com a API
 
@@ -15,7 +10,6 @@ Interface da aplicação SysOS, apresentada na disciplina de **Desenvolvimento W
 - **Retorno ao usuário:** a interface apresenta carregamento durante as requisições, confirmação após sucesso e mensagens de erro quando o backend recusa a operação ou está indisponível.
 
 Por exemplo, cadastrar um cliente envia nome e contato para `POST /api/clientes`; a resposta fornece o identificador que será usado nas consultas e no cadastro de seus equipamentos.
->>>>>>> 3b26d1b (docs: alterar documentacao)
 
 ## Executar
 
@@ -86,10 +80,9 @@ Com token de **ATENDENTE**, abra os detalhes do cliente pelo nome nos resultados
 
 PUT e DELETE retornam JSON com o cadastro atualizado ou excluído (200). A interface só apresenta sucesso após essa resposta; não remove resultados de forma otimista em caso de erro.
 
-
 ## Ordens de serviço
 
-O menu **Ordens de serviço** integra as rotas descritas em [ORDEM_SERVICO.md](../backend/docs/ORDEM_SERVICO.md). Atendentes abrem e consultam OS; técnicos podem consultar.
+O menu **Ordens de serviço** integra as rotas descritas no [README do backend](../backend/README.md#ordens-de-serviço). Atendentes abrem e consultam OS; técnicos podem consultar.
 
 ### Abrir uma OS
 
@@ -174,8 +167,4 @@ Roteiro manual com a API e um banco de desenvolvimento:
 - `src/components/Details.tsx`: consultas individuais.
 - `src/App.tsx`: navegação, seleção de cliente e acesso por token.
 
-<<<<<<< HEAD
-O escopo inclui CRUD de clientes/equipamentos e abertura/consulta de OS, respeitando vínculos e histórico. Pagamento, entrega, estoque, administração da loja e implementação do login não integram esta etapa. Nenhuma skill específica ou subagente foi utilizado nesta adaptação.
-=======
-O escopo agora inclui cadastro, consulta, alteração e exclusão de clientes e equipamentos, respeitando vínculos e histórico. Pagamento, entrega, estoque, administração da loja e implementação do login não integram esta etapa.
->>>>>>> 3b26d1b (docs: alterar documentacao)
+O escopo inclui CRUD de clientes/equipamentos e abertura/consulta de OS, respeitando vínculos e histórico. Pagamento, entrega, estoque, administração da loja e implementação do login não integram esta etapa.
