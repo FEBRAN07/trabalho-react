@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState, type FormEvent } from 'react'
-import { Check, ChevronRight, Monitor, Plus, UserRound, UsersRound, X, Zap } from './components/Icons'
+import { Check, ChevronRight, ClipboardList, Monitor, Plus, UserRound, UsersRound, X, Zap } from './components/Icons'
+import { OrdersPage } from './components/Orders'
 import { Modal } from './components/Modal'
 import { ClientForm, EquipmentForm } from './components/Forms'
 import { ClientSearch, EquipmentPanel } from './components/SearchPanels'
@@ -8,7 +9,7 @@ import { DeleteConfirmation } from './components/DeleteConfirmation'
 import { createApi, tokenProfile } from './lib/api'
 import type { Client, Equipment } from './lib/registry'
 
-type Page = 'clients' | 'equipment'
+type Page = 'clients' | 'equipment' | 'orders'
 type Dialog =
   | { kind: 'client' }
   | { kind: 'client-edit' | 'client-delete' | 'client-detail'; client: Client }
@@ -101,12 +102,13 @@ export default function App({ apiBaseUrl = 'http://localhost:3000/api' }: { apiB
 
   return <div className="app-shell">
     <aside className="sidebar">
-      <a className="brand" href="#clientes" onClick={e => { e.preventDefault(); setPage('clients') }} aria-label="SysOS — ir para clientes"><span className="brand-mark"><Zap size={24} fill="currentColor" /></span><span>sys<span className="brand-os">OS</span><span className="brand-dot">.</span></span></a>
+      <a className="brand" href="#clientes" onClick={e => { e.preventDefault(); if (!busy) setPage('clients') }} aria-label="SysOS — ir para clientes"><span className="brand-mark"><Zap size={24} fill="currentColor" /></span><span>sys<span className="brand-os">OS</span><span className="brand-dot">.</span></span></a>
       <div className="workspace-label"><span className="workspace-icon"><Monitor size={17} /></span><div><strong>Assistência técnica</strong><span>Espaço de trabalho</span></div></div>
       <div className="nav-label">ESPAÇO DE TRABALHO</div>
       <nav aria-label="Navegação principal">
-        <button className={`nav-item ${isClients ? 'active' : ''}`} onClick={() => setPage('clients')} aria-current={isClients ? 'page' : undefined}><UsersRound size={19} /><span>Clientes</span></button>
-        <button className={`nav-item ${!isClients ? 'active' : ''}`} onClick={() => setPage('equipment')} aria-current={!isClients ? 'page' : undefined}><Monitor size={19} /><span>Equipamentos</span></button>
+        <button className={`nav-item ${isClients ? 'active' : ''}`} disabled={busy} onClick={() => setPage('clients')} aria-current={isClients ? 'page' : undefined}><UsersRound size={19} /><span>Clientes</span></button>
+        <button className={`nav-item ${page === 'equipment' ? 'active' : ''}`} disabled={busy} onClick={() => setPage('equipment')} aria-current={page === 'equipment' ? 'page' : undefined}><Monitor size={19} /><span>Equipamentos</span></button>
+        <button className={`nav-item ${page === 'orders' ? 'active' : ''}`} disabled={busy} onClick={() => setPage('orders')} aria-current={page === 'orders' ? 'page' : undefined}><ClipboardList size={19} /><span>Ordens de serviço</span></button>
       </nav>
       <div className="sidebar-bottom"><div className="sidebar-version"><span className="version-dot" />SysOS <span>v0.2</span></div></div>
     </aside>
@@ -118,13 +120,13 @@ export default function App({ apiBaseUrl = 'http://localhost:3000/api' }: { apiB
         </div>
       </header>
       <main>
-        <div className="page-heading"><h1>{isClients ? 'Clientes' : 'Equipamentos'}<span className="heading-dot">.</span></h1>
-          {canCreate && <button className="button primary" disabled={!isClients && !selectedClient} onClick={() => setDialog(isClients ? { kind: 'client' } : { kind: 'equipment', client: selectedClient! })}><Plus size={18} />{isClients ? 'Novo cliente' : 'Novo equipamento'}</button>}
+        <div className="page-heading"><h1>{isClients ? 'Clientes' : page === 'orders' ? 'Ordens de serviço' : 'Equipamentos'}<span className="heading-dot">.</span></h1>
+          {canCreate && page !== 'orders' && <button className="button primary" disabled={!isClients && !selectedClient} onClick={() => setDialog(isClients ? { kind: 'client' } : { kind: 'equipment', client: selectedClient! })}><Plus size={18} />{isClients ? 'Novo cliente' : 'Novo equipamento'}</button>}
         </div>
         {sessionError && <div className="error-notice" role="alert">{sessionError}</div>}
-        {!token ? <section className="registry-panel"><div className="empty-state"><UserRound size={32} /><h2>Informe o acesso à API</h2><p>Use um token de atendente ou técnico para buscar clientes e equipamentos.</p><button className="button primary" onClick={() => setDialog({ kind: 'session' })}>Informar token</button></div></section> :
+        {!token ? <section className="registry-panel"><div className="empty-state"><UserRound size={32} /><h2>Informe o acesso à API</h2><p>Use um token de atendente ou técnico para consultar clientes, equipamentos e ordens de serviço.</p><button className="button primary" onClick={() => setDialog({ kind: 'session' })}>Informar token</button></div></section> :
           <div key={sessionVersion}>
-            {isClients || !selectedClient ? <ClientSearch key={page} revision={clientRevision} api={api} selecting={!isClients} canCreate={canCreate} onSelect={selectClient} onDetails={client => setDialog({ kind: 'client-detail', client })} onNewClient={() => setDialog({ kind: 'client' })} /> :
+            {page === 'orders' ? <OrdersPage api={api} canCreate={canCreate} onBusyChange={setBusy} onNotice={setNotice} /> : isClients || !selectedClient ? <ClientSearch key={page} revision={clientRevision} api={api} selecting={!isClients} canCreate={canCreate} onSelect={selectClient} onDetails={client => setDialog({ kind: 'client-detail', client })} onNewClient={() => setDialog({ kind: 'client' })} /> :
               <EquipmentPanel key={`${selectedClient.id}:${revision}`} api={api} client={selectedClient} canCreate={canCreate} revision={revision} onNew={() => setDialog({ kind: 'equipment', client: selectedClient })} onDetails={item => setDialog({ kind: 'equipment-detail', client: selectedClient, code: item.code })} onChangeClient={() => setSelectedClient(null)} />}
           </div>}
       </main>

@@ -11,6 +11,9 @@ module.exports = {
   collectCoverageFrom: [
     'src/lib/registry.ts',
     'src/lib/api.ts',
+    'src/lib/orders.ts',
+    'src/components/Orders.tsx',
+    'src/components/OrderForm.tsx',
     'src/components/SearchPanels.tsx',
     'src/components/Details.tsx',
     'src/components/Forms.tsx',

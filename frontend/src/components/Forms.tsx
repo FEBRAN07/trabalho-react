@@ -52,7 +52,7 @@ export function ClientForm({ onSave, onCreated, onCancel, onBusyChange, initialC
       <div className="form-body">
         <div className="form-section-heading"><span className="section-icon"><UserRound size={19} /></span><h3>Dados do cliente</h3></div>
         <label className="field" htmlFor="client-name">Nome completo <span className="required">*</span>
-          <input id="client-name" autoFocus autoComplete="name" maxLength={150} placeholder="Ex.: Ana Carolina Souza" value={input.name} onChange={e => change('name', e.target.value)} aria-required="true" aria-invalid={!!errors.name} aria-describedby={errors.name ? 'name-error' : undefined} />
+          <input id="client-name" autoFocus autoComplete="off" maxLength={150} placeholder="Ex.: Ana Carolina Souza" value={input.name} onChange={e => change('name', e.target.value)} aria-required="true" aria-invalid={!!errors.name} aria-describedby={errors.name ? 'name-error' : undefined} />
           <FieldError id="name-error" error={errors.name} />
         </label>
         <div className="contact-heading"><h4>Informações de contato <span className="required">*</span></h4><span>Preencha pelo menos uma opção</span></div>

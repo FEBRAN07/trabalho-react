@@ -1,3 +1,4 @@
+import { validateOrder, type ServiceOrder, type OpenOrder, type OrderInput, type OrderFilters } from './orders'
 import { formatPhone, validateClientSearch, validateId, type Client, type ClientInput, type Equipment, type EquipmentInput, type Errors } from './registry'
 
 export interface ClientDto {
@@ -16,8 +17,22 @@ export function equipmentFromApi(data: EquipmentDto): Equipment {
   return { id: `${data.clienteId}:${data.codigoInterno}`, clientId: String(data.clienteId), code: String(data.codigoInterno), type: data.tipo, brand: data.marca ?? '', model: data.modelo ?? '', serial: data.numeroSerie ?? '', createdAt: data.criadoEm }
 }
 
+export interface OrderDto {
+  numero: number; status: string; problemaRelatado: string; criadoEm: string; criadoPorId: number
+  cliente: { id: number; nome: string; telefone: string | null; email: string | null }
+  equipamento: { codigoInterno: number; tipo: string; marca: string | null; modelo: string | null; numeroSerie: string | null }
+}
+interface OpenOrderDto { numero: number; status: string; problemaRelatado: string; criadoEm: string }
+export function orderFromApi(data: OrderDto): ServiceOrder {
+  return { number: String(data.numero), status: data.status, problem: data.problemaRelatado, createdAt: data.criadoEm,
+    createdBy: String(data.criadoPorId), client: { id: String(data.cliente.id), name: data.cliente.nome,
+      phone: formatPhone(data.cliente.telefone ?? ''), email: data.cliente.email ?? '' },
+    equipment: { code: String(data.equipamento.codigoInterno), type: data.equipamento.tipo,
+      brand: data.equipamento.marca ?? '', model: data.equipamento.modelo ?? '', serial: data.equipamento.numeroSerie ?? '' } }
+}
+
 export class ApiError extends Error {
-  constructor(message: string, public status = 0, public code = 'FALHA_DE_CONEXAO', public fields: Errors = {}, public candidates: Client[] = []) {
+  constructor(message: string, public status = 0, public code = 'FALHA_DE_CONEXAO', public fields: Errors = {}, public candidates: Client[] = [], public openOrders: OpenOrder[] = []) {
     super(message)
     this.name = 'ApiError'
   }
@@ -27,7 +42,7 @@ export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Não foi possível concluir a operação. Tente novamente.'
 }
 
-const fieldNames: Record<string, keyof Errors> = { nome: 'name', telefone: 'phone', email: 'email', contato: 'contact', tipo: 'type', marca: 'brand', modelo: 'model', numeroSerie: 'serial' }
+const fieldNames: Record<string, keyof Errors> = { clienteId: 'clientId', equipamentoCodigoInterno: 'equipmentCode', problemaRelatado: 'problem', nome: 'name', telefone: 'phone', email: 'email', contato: 'contact', tipo: 'type', marca: 'brand', modelo: 'model', numeroSerie: 'serial' }
 
 export function createApi(baseUrl: string, token: string, onUnauthorized?: () => void) {
   const base = baseUrl.replace(/\/+$/, '')
@@ -60,7 +75,9 @@ export function createApi(baseUrl: string, token: string, onUnauthorized?: () =>
       }
       const candidates = Array.isArray(problem?.detalhes?.candidatos)
         ? problem.detalhes.candidatos.map(clientFromApi) : []
-      throw new ApiError(problem?.mensagem || 'Não foi possível concluir a operação.', response.status, problem?.codigo, fields, candidates)
+      const openOrders = Array.isArray(problem?.detalhes?.ordensEmAberto)
+        ? problem.detalhes.ordensEmAberto.map((order: OpenOrderDto) => ({ number: String(order.numero), status: order.status, problem: order.problemaRelatado, createdAt: order.criadoEm })) : []
+      throw new ApiError(problem?.mensagem || 'Não foi possível concluir a operação.', response.status, problem?.codigo, fields, candidates, openOrders)
     }
     return body as T
   }
@@ -69,6 +86,27 @@ export function createApi(baseUrl: string, token: string, onUnauthorized?: () =>
     return String(Number(value))
   }
   return {
+    async createOrder(input: OrderInput, confirmOpen = false): Promise<ServiceOrder> {
+      const errors = validateOrder(input)
+      if (Object.keys(errors).length) throw new ApiError('Revise os dados da ordem de serviço.', 400, 'DADOS_INVALIDOS', errors)
+      return orderFromApi(await request<OrderDto>('/ordens-servico', { method: 'POST', body: JSON.stringify({
+        clienteId: Number(input.clientId), equipamentoCodigoInterno: Number(input.equipmentCode), problemaRelatado: input.problem.trim(),
+        ...(confirmOpen ? { confirmarOsEmAberto: true } : {}),
+      }) }))
+    },
+    async listOrders(filters: OrderFilters = {}, signal?: AbortSignal): Promise<{ orders: ServiceOrder[]; total: number }> {
+      const query = new URLSearchParams()
+      if (filters.clientId) query.set('clienteId', id(filters.clientId))
+      if (filters.status?.trim()) {
+        if (filters.status.trim().length > 40) throw new ApiError('Use até 40 caracteres no status.', 400, 'DADOS_INVALIDOS')
+        query.set('status', filters.status.trim())
+      }
+      const data = await request<{ ordens: OrderDto[]; total: number }>(`/ordens-servico${query.size ? `?${query}` : ''}`, { signal })
+      return { orders: data.ordens.map(orderFromApi), total: data.total }
+    },
+    async getOrder(number: string, signal?: AbortSignal): Promise<ServiceOrder> {
+      return orderFromApi(await request<OrderDto>(`/ordens-servico/${id(number)}`, { signal }))
+    },
     async searchClients(query: string, signal?: AbortSignal): Promise<ClientSearchResult> {
       const error = validateClientSearch(query)
       if (error) throw new ApiError(error, 400, 'DADOS_INVALIDOS')

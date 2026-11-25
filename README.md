@@ -2,7 +2,7 @@
 
 Projeto acadêmico de um sistema de gerenciamento de ordens de serviço para assistências técnicas de pequeno e médio porte, desenvolvido no contexto da disciplina de Gestão de Projetos.
 
-O protótipo atual implementa **CRUD de clientes e equipamentos (cadastro, consulta, alteração e exclusão)**, com frontend integrado a uma API REST e persistência em PostgreSQL. O gerenciamento das ordens de serviço faz parte da evolução prevista do produto e ainda não está implementado.
+O protótipo atual implementa **CRUD de clientes e equipamentos (cadastro, consulta, alteração e exclusão)**, com frontend integrado a uma API REST e persistência em PostgreSQL. Também permite abrir e consultar ordens de serviço, com filtros por cliente/status e confirmação de OS já em aberto.
 
 ## Documentação
 
@@ -23,11 +23,13 @@ O protótipo atual implementa **CRUD de clientes e equipamentos (cadastro, consu
 - Edição de clientes e equipamentos, preservando seus identificadores e vínculos.
 - Exclusão com confirmação explícita e tratamento das restrições de vínculo do backend.
 - Acesso à API com JWT e permissões para atendentes e técnicos.
+- Abertura de OS com seleção de cliente/equipamento e descrição do problema.
+- Consulta de OS por número e filtros por cliente/status, com detalhes e aviso de OS em aberto.
 - Interface em português voltada a computadores.
 
 Não há listagem global de clientes ou equipamentos. Primeiro o funcionário busca um cliente; depois, seleciona-o para consultar ou cadastrar seus equipamentos. Um equipamento é identificado pelo par **cliente + código interno**, portanto clientes diferentes podem ter equipamentos com o mesmo código.
 
-Abertura e acompanhamento de OS, diagnóstico, orçamento, reparo e conclusão técnica são etapas futuras. Pagamento, entrega física de aparelhos, estoque e administração da loja ficam fora do escopo atual do projeto.
+Atualização de status da OS, diagnóstico, orçamento, reparo e conclusão técnica são etapas futuras. Pagamento, entrega física de aparelhos, estoque e administração da loja ficam fora do escopo atual do projeto.
 
 ## Tecnologias
 
