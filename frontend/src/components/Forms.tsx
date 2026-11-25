@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useRef, useState, type FormEvent } from 'react'
 import { AlertTriangle, ArrowLeft, Check, Monitor, UserRound } from './Icons'
 import {
   EQUIPMENT_TYPES,
@@ -43,18 +43,6 @@ export function ClientForm({
   const [saveError, setSaveError] = useState('')
   const [saving, setSaving] = useState(false)
   const submitting = useRef(false)
-
-  useEffect(() => {
-    setInput({
-      name: initialClient?.name ?? '',
-      phone: formatPhone(initialClient?.phone ?? ''),
-      email: initialClient?.email ?? '',
-    })
-    setErrors({})
-    setDuplicates([])
-    setDuplicateConfirmed(false)
-    setSaveError('')
-  }, [initialClient])
 
   function change(field: keyof ClientInput, value: string) {
     setInput(previous => ({
@@ -117,7 +105,7 @@ export function ClientForm({
       <div className="form-body">
         <div className="form-section-heading"><span className="section-icon"><UserRound size={19} /></span><h3>Dados do cliente</h3></div>
         <label className="field" htmlFor="client-name">Nome completo <span className="required">*</span>
-          <input id="client-name" autoFocus autoComplete="name" maxLength={150} placeholder="Ex.: Ana Carolina Souza" value={input.name} onChange={e => change('name', e.target.value)} aria-required="true" aria-invalid={!!errors.name} aria-describedby={errors.name ? 'name-error' : undefined} />
+          <input id="client-name" autoFocus autoComplete="off" maxLength={150} placeholder="Ex.: Ana Carolina Souza" value={input.name} onChange={e => change('name', e.target.value)} aria-required="true" aria-invalid={!!errors.name} aria-describedby={errors.name ? 'name-error' : undefined} />
           <FieldError id="name-error" error={errors.name} />
         </label>
         <div className="contact-heading"><h4>Informações de contato <span className="required">*</span></h4><span>Preencha pelo menos uma opção</span></div>
@@ -130,116 +118,22 @@ export function ClientForm({
             <input id="client-email" type="email" autoComplete="email" maxLength={254} placeholder="nome@exemplo.com" value={input.email} onChange={e => change('email', e.target.value)} aria-invalid={!!errors.email || !!errors.contact} aria-describedby="email-error contact-error" />
             <FieldError id="email-error" error={errors.email} />
           </label>
-
-          <div className="contact-heading">
-            <h4>Informações de contato <span className="required">*</span></h4>
-            <span>Preencha pelo menos uma opção</span>
-          </div>
-
-          <div className="form-grid">
-            <label className="field" htmlFor="client-phone">
-              Telefone
-              <input
-                id="client-phone"
-                type="tel"
-                inputMode="numeric"
-                autoComplete="tel-national"
-                maxLength={15}
-                placeholder="(42) 99922-2222"
-                value={input.phone}
-                onChange={e => change('phone', e.target.value)}
-                aria-invalid={!!errors.phone || !!errors.contact}
-                aria-describedby="phone-hint phone-error contact-error"
-              />
-              <span className="field-hint" id="phone-hint">Inclua o DDD.</span>
-              <FieldError id="phone-error" error={errors.phone} />
-            </label>
-
-            <label className="field" htmlFor="client-email">
-              E-mail
-              <input
-                id="client-email"
-                type="email"
-                autoComplete="email"
-                maxLength={254}
-                placeholder="nome@exemplo.com"
-                value={input.email}
-                onChange={e => change('email', e.target.value)}
-                aria-invalid={!!errors.email || !!errors.contact}
-                aria-describedby="email-error contact-error"
-              />
-              <FieldError id="email-error" error={errors.email} />
-            </label>
-          </div>
-
-          <FieldError id="contact-error" error={errors.contact} />
-
-          {duplicates.length > 0 && (
-            <div className="duplicate-notice" role="alert">
-              <div className="notice-title">
-                <AlertTriangle size={19} />
-                <strong>Encontramos um cadastro parecido</strong>
-              </div>
-
-              <p>
-                Confira os candidatos retornados pela API antes de{' '}
-                {initialClient ? 'salvar as alterações' : 'criar outro cadastro'}.
-              </p>
-
-              <ul>
-                {duplicates.map(client => (
-                  <li key={client.id}>
-                    <strong>{client.name}</strong>
-                    <span>{client.code} · {client.phone || client.email}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <label className="checkbox">
-                <input
-                  type="checkbox"
-                  checked={duplicateConfirmed}
-                  onChange={e => setDuplicateConfirmed(e.target.checked)}
-                />
-                Conferi os dados e confirmo{' '}
-                {initialClient ? 'a alteração deste cliente' : 'um cadastro separado'}.
-              </label>
-            </div>
-          )}
-
-          {saveError && (
-            <div className="error-notice" role="alert">{saveError}</div>
-          )}
         </div>
-
-        <div className="modal-footer">
-          <span><span className="required">*</span> Campo obrigatório</span>
-          <div>
-            <button
-              type="button"
-              className="button secondary"
-              onClick={onCancel}
-            >
-              Cancelar
-            </button>
-
-            <button
-              type="submit"
-              className="button primary"
-              disabled={saving || (duplicates.length > 0 && !duplicateConfirmed)}
-            >
-              <Check size={17} />
-              {saving
-                ? 'Salvando...'
-                : initialClient
-                  ? 'Salvar alterações'
-                  : 'Cadastrar cliente'}
-            </button>
-          </div>
-        </div>
-      </fieldset>
-    </form>
-  )
+        <FieldError id="contact-error" error={errors.contact} />
+        {duplicates.length > 0 && <div className="duplicate-notice" role="alert">
+          <div className="notice-title"><AlertTriangle size={19} /><strong>Encontramos um cadastro parecido</strong></div>
+          <p>Confira os candidatos retornados pela API antes de {initialClient ? 'salvar as alterações' : 'criar outro cadastro'}.</p>
+          <ul>{duplicates.map(client => <li key={client.id}><strong>{client.name}</strong><span>{client.code} · {client.phone || client.email}</span></li>)}</ul>
+          <label className="checkbox"><input type="checkbox" checked={duplicateConfirmed} onChange={e => setDuplicateConfirmed(e.target.checked)} />Conferi os dados e confirmo {initialClient ? 'a alteração deste cliente' : 'um cadastro separado'}.</label>
+        </div>}
+        {saveError && <div className="error-notice" role="alert">{saveError}</div>}
+      </div>
+      <div className="modal-footer"><span><span className="required">*</span> Campo obrigatório</span><div>
+        <button type="button" className="button secondary" onClick={onCancel}>Cancelar</button>
+        <button type="submit" className="button primary" disabled={duplicates.length > 0 && !duplicateConfirmed}><Check size={17} />{saving ? 'Salvando...' : initialClient ? 'Salvar alterações' : 'Cadastrar cliente'}</button>
+      </div></div>
+    </fieldset>
+  </form>
 }
 
 export function EquipmentForm({
@@ -269,18 +163,6 @@ export function EquipmentForm({
   const [saveError, setSaveError] = useState('')
   const [saving, setSaving] = useState(false)
   const submitting = useRef(false)
-
-  useEffect(() => {
-    setInput({
-      clientId: client.id,
-      type: initialEquipment?.type ?? '',
-      brand: initialEquipment?.brand ?? '',
-      model: initialEquipment?.model ?? '',
-      serial: initialEquipment?.serial ?? '',
-    })
-    setErrors({})
-    setSaveError('')
-  }, [client, initialEquipment])
 
   function change(field: keyof EquipmentInput, value: string) {
     setInput(previous => ({

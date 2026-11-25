@@ -2,7 +2,7 @@ import { useRef, useState, type FormEvent } from 'react'
 import { errorMessage } from '../lib/api'
 
 export function DeleteConfirmation({ resource, description, onDelete, onDeleted, onCancel, onBusyChange }: {
-  resource: 'cliente' | 'equipamento'
+  resource: 'cliente' | 'equipamento' | 'usuário'
   description: string
   onDelete: () => Promise<unknown>
   onDeleted: () => void
@@ -25,10 +25,10 @@ export function DeleteConfirmation({ resource, description, onDelete, onDeleted,
   }
   return <form onSubmit={submit} aria-busy={deleting}>
     <div className="form-body delete-confirmation">
-      <p>Confirma a exclusão {resource === 'cliente' ? 'do cliente' : 'do equipamento'} <strong>{description}</strong>?</p>
+      <p>Confirma a exclusão {`do ${resource}`} <strong>{description}</strong>?</p>
       <p>{resource === 'cliente'
         ? 'Clientes com equipamentos ou ordens de serviço vinculados não podem ser excluídos.'
-        : 'Equipamentos com ordens de serviço vinculadas não podem ser excluídos.'}</p>
+        : resource === 'equipamento' ? 'Equipamentos com ordens de serviço vinculadas não podem ser excluídos.' : 'Usuários com vínculos não podem ser excluídos.'}</p>
       {error && <div className="error-notice" role="alert">{error}</div>}
     </div>
     <div className="modal-footer"><div className="delete-confirmation-actions">

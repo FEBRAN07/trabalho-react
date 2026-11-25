@@ -19,6 +19,7 @@ export function validateUser(input: UserInput, editing = false) {
   if (!input.name.trim()) errors.name = 'Informe o nome.'
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email.trim())) errors.email = 'Informe um e-mail válido.'
   if (!editing && !input.password.trim()) errors.password = 'Informe a senha.'
+  if (input.password.length > 1024) errors.password = 'Use até 1024 caracteres na senha.'
   if (!['ATENDENTE', 'TECNICO'].includes(input.profile)) errors.profile = 'Selecione um perfil válido.'
   return errors
 }

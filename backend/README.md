@@ -2,7 +2,7 @@
 
 API REST da aplicação SysOS, apresentada na disciplina de **Desenvolvimento Web**. O backend recebe os dados enviados pelo frontend React, realiza validações e operações no PostgreSQL e devolve respostas JSON para apresentação na interface.
 
-Desenvolvido com **TypeScript, Node.js, Express, Prisma e PostgreSQL**, com testes em **Jest**. Disponibiliza CRUD de clientes e equipamentos, além de abertura e consulta de ordens de serviço. Cada equipamento pertence a um cliente e é identificado pelo par `clienteId` + `codigoInterno`.
+Desenvolvido com **TypeScript, Node.js, Express, Prisma e PostgreSQL**, com testes em **Jest**. Disponibiliza CRUD de clientes, equipamentos e usuários, além de abertura e consulta de ordens de serviço. Cada equipamento pertence a um cliente e é identificado pelo par `clienteId` + `codigoInterno`.
 
 ## Pré-requisitos
 
@@ -74,24 +74,19 @@ Sem `DATABASE_URL` carregada, a suíte de integração é ignorada (aparece como
 
 ## Autenticação
 
-Toda rota sob `/api` exige `Authorization: Bearer <token>`. A versão atual não possui rota de login; a API valida tokens JWT
-(HS256, com `sub` = id do funcionário e `perfil` = `ATENDENTE` ou `TECNICO`).
+`POST /api/login` é público e recebe `{ "email": "nome@exemplo.com", "senha": "sua senha" }`. Retorna JWT de uma hora e os dados públicos do funcionário. Conta inativa, e-mail inexistente ou senha incorreta retornam 401.
 
-Para testar manualmente, gere um token de desenvolvimento (o script `token:dev`
-lê o `JWT_SECRET` do `.env`):
+As demais rotas `/api` exigem `Authorization: Bearer <token>`. O middleware verifica assinatura, expiração e o cadastro atual do funcionário: exclusão/inativação ou mudança de perfil invalida o acesso na chamada seguinte. Trocar apenas a senha não revoga tokens existentes. O frontend mantém a sessão em memória e não solicita token manual.
 
-PowerShell (Windows):
+### Primeiro funcionário
 
-```powershell
-$TOKEN = npm run -s token:dev -- ATENDENTE 1
-$h = @{ Authorization = "Bearer $TOKEN" }
-```
-
-Bash (Linux/Mac):
+A migração `20261125000100_usuarios` cria a tabela de usuários. Aplique as migrações conforme a configuração inicial. Para cadastrar o primeiro funcionário, defina `ADMIN_NOME`, `ADMIN_EMAIL` e `ADMIN_SENHA` no `.env` do backend; opcionalmente `ADMIN_PERFIL` (`ATENDENTE` por padrão). Execute:
 
 ```bash
-TOKEN=$(npm run -s token:dev -- ATENDENTE 1)
+npm run usuario:inicial
 ```
+
+Depois, entre no frontend com esse e-mail/senha e use o menu **Usuários** para os próximos cadastros. O script não altera um usuário que já tenha o mesmo e-mail. O comando `token:dev` permanece disponível para ferramentas de desenvolvimento; o id/perfil do token precisa corresponder a um usuário ativo existente.
 
 Permissões de acesso: escrita (`POST`, `PUT` e `DELETE`) só para
 `ATENDENTE`; leitura (`GET`) para `ATENDENTE` e `TECNICO`.
@@ -100,6 +95,12 @@ Permissões de acesso: escrita (`POST`, `PUT` e `DELETE`) só para
 
 | Método e rota | Perfil | Descrição |
 |---|---|---|
+| `POST /api/login` | público | Autentica funcionário ativo por e-mail/senha |
+| `POST /api/usuarios` | atendente | Cadastra funcionário com nome, e-mail, senha e perfil |
+| `GET /api/usuarios` | ambos | Lista funcionários, em ordem de nome |
+| `GET /api/usuarios/:id` | ambos | Consulta funcionário pelo identificador |
+| `PUT /api/usuarios/:id` | atendente | Altera nome, e-mail, senha, perfil e/ou situação |
+| `DELETE /api/usuarios/:id` | atendente | Exclui funcionário, se não houver vínculos |
 | `POST /api/clientes` | atendente | Cadastra cliente (nome + ao menos um contato). Responde `409` se houver possível duplicidade; para confirmar, repita com `"confirmarDuplicidade": true` |
 | `GET /api/clientes?busca=` | ambos | Busca por nome, telefone ou e-mail; sem resultado devolve `ofertaCadastro: true` |
 | `GET /api/clientes/:clienteId` | ambos | Consulta um cliente |
@@ -113,7 +114,21 @@ Permissões de acesso: escrita (`POST`, `PUT` e `DELETE`) só para
 
 `GET /health` não exige login e não expõe dados.
 
-### Como funcionam a alteração e a exclusão
+### Usuários
+
+POST recebe `nome`, `email`, `senha` e `perfil` (`ATENDENTE` ou `TECNICO`); o cadastro começa ativo. PUT de usuários aceita campos parciais, incluindo `ativo` booleano. Omitir senha mantém o hash atual; senha vazia é inválida. E-mails são normalizados para minúsculas. Duplicidade em POST/PUT retorna 409.
+
+As respostas de cadastro, consulta e edição incluem apenas `id`, `nome`, `email`, `perfil`, `ativo` e `criadoEm`. Nunca incluem senha ou hash. DELETE retorna 200 com `{ "mensagem": "Usuário excluído com sucesso." }`; vínculos retornam 409 e usuário inexistente, 404.
+
+As senhas usam scrypt com salt aleatório. Cadastros antigos em texto são convertidos após um login válido. As rotas de usuários ficam dentro do roteador autenticado, antes do tratamento de rota desconhecida, com as mesmas regras de CORS das demais rotas.
+
+```bash
+npm test -- --runInBand usuarios.test.ts login.test.ts cors.test.ts
+```
+
+Essas suítes exercitam o Express em memória, com repositórios simulados e sem PostgreSQL. Testes remanescentes de inativação de clientes/equipamentos (`tests/inativos.test.ts`) ainda dependem de métodos ausentes neste branch e afetam a verificação de tipos da suíte completa.
+
+### Como funcionam a alteração e a exclusão de clientes/equipamentos
 
 - **`PUT` substitui os dados editáveis** (não é parcial): envie o cadastro
   completo. Num cliente, omitir um contato o remove, desde que reste ao menos
@@ -138,7 +153,7 @@ A busca de clientes exige um termo com 2 a 150 caracteres e retorna no máximo 2
 
 ### Exemplos
 
-PowerShell (Windows), usando o `$h` da seção anterior:
+PowerShell (Windows): copie o campo `token` da resposta do login para `$TOKEN` e defina `$h = @{ Authorization = "Bearer $TOKEN" }` antes dos exemplos abaixo:
 
 ```powershell
 $body = @{ nome = "Maria da Silva"; telefone = "(42) 99999-1234" } | ConvertTo-Json
@@ -215,11 +230,11 @@ tests/             Jest + Supertest; tests/integracao exige PostgreSQL
 
 ## Integração com o frontend e CORS
 
-O frontend em `../frontend` usa `VITE_API_URL=http://localhost:3000/api` e permite informar o JWT gerado por `token:dev`, sem incluir segredos no código do navegador.
+O frontend em `../frontend` usa `VITE_API_URL=http://localhost:3000/api` e autentica por e-mail/senha em `POST /api/login`, mantendo o JWT recebido apenas na memória da aba.
 
 Por padrão, o backend aceita as origens `http://localhost:5173`, `http://127.0.0.1:5173`, `http://localhost:4173` e `http://127.0.0.1:4173`. Para outra origem, configure `CORS_ORIGINS` com valores exatos separados por vírgula, por exemplo `https://sysos.example`. A configuração substitui a lista padrão; valor vazio não permite origens de navegador.
 
-O middleware trata preflight `OPTIONS` antes do JWT, permite `GET`, `POST`, `PUT` e `DELETE` com `Authorization` e `Content-Type` e expõe `Location`. As requisições efetivas continuam exigindo token e perfil; respostas de erro para origens permitidas também recebem CORS. Não usa coringa nem cookies. Chamadas sem `Origin` (como scripts e ferramentas de API) continuam sujeitas à autenticação das rotas `/api`.
+O middleware trata preflight `OPTIONS` antes do JWT, permite `GET`, `POST`, `PUT` e `DELETE` com `Authorization` e `Content-Type` e expõe `Location`. As operações protegidas exigem token e perfil; o login é público; respostas de erro para origens permitidas também recebem CORS. Não usa coringa nem cookies. Chamadas sem `Origin` (como scripts e ferramentas de API) continuam sujeitas à autenticação das rotas `/api`.
 
 ```bash
 npm test -- --runInBand cors.test.ts

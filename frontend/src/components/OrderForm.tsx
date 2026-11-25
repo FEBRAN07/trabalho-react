@@ -62,7 +62,7 @@ export function OrderEntry({ api, client, initialEquipment, onCreated, onCancel,
   return <form onSubmit={submit} noValidate aria-busy={saving}><fieldset className="form-fields" disabled={saving}>
     <div className="form-body">
       <div className="order-client-summary"><div><h3>{client.name}</h3><p>Cliente {client.code} · {client.phone || client.email}</p></div><button className="button secondary" type="button" onClick={onChangeClient}>Trocar cliente</button></div>
-      <label className="field" htmlFor="order-equipment">Equipamento <span className="required">*</span>
+      <label className="field" htmlFor="order-equipment"><span>Equipamento <span className="required">*</span></span>
         <select autoFocus id="order-equipment" value={code} disabled={equipment.loading || !!equipment.error} onChange={event => { setCode(event.target.value); changed() }} aria-required="true" aria-invalid={!!errors.equipmentCode} aria-describedby="order-equipment-error"><option value="">{equipment.loading ? 'Carregando equipamentos...' : 'Selecione o equipamento'}</option>{equipment.items.map(item => <option key={item.id} value={item.code}>#{item.code} · {[item.type, item.brand, item.model].filter(Boolean).join(' · ')}{item.serial ? ` · série ${item.serial}` : ''}</option>)}</select>
         <FieldError id="order-equipment-error" error={errors.equipmentCode} />
       </label>
@@ -70,7 +70,7 @@ export function OrderEntry({ api, client, initialEquipment, onCreated, onCancel,
       {equipment.error && <div className="error-notice" role="alert">{equipment.error}<button className="text-button" type="button" onClick={() => { setEquipment({ items: [], loading: true, error: '' }); setRetry(value => value + 1) }}>Tentar novamente</button></div>}
       {!equipment.loading && !equipment.error && equipment.items.length === 0 && <p>Nenhum equipamento cadastrado para este cliente.</p>}
       <button className="text-button" type="button" onClick={onNewEquipment}>Cadastrar equipamento deste cliente</button>
-      <label className="field order-problem-field" htmlFor="order-problem">Problema relatado <span className="required">*</span>
+      <label className="field order-problem-field" htmlFor="order-problem"><span>Problema relatado <span className="required">*</span></span>
         <textarea id="order-problem" rows={5} maxLength={1000} value={problem} onChange={event => { setProblem(event.target.value); changed() }} aria-required="true" aria-invalid={!!errors.problem} aria-describedby="order-problem-error" />
         <FieldError id="order-problem-error" error={errors.problem} />
       </label>

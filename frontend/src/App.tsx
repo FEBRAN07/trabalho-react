@@ -7,23 +7,11 @@ import { ClientForm, EquipmentForm } from './components/Forms'
 import { ClientSearch, EquipmentPanel } from './components/SearchPanels'
 import { ClientDetails, EquipmentDetails } from './components/Details'
 import { DeleteConfirmation } from './components/DeleteConfirmation'
-import { createApi } from './lib/api'
+import { UsersPage } from './components/Users'
+import { createApi, type Session } from './lib/api'
 import type { Client, Equipment } from './lib/registry'
 
-type Page = 'clients' | 'equipment' | 'orders'
-
-type Usuario = {
-  id: number
-  nome: string
-  email: string
-  perfil: 'ATENDENTE' | 'TECNICO'
-  ativo: boolean
-}
-
-type Sessao = {
-  token: string
-  usuario: Usuario
-}
+type Page = 'clients' | 'equipment' | 'orders' | 'users'
 
 type Dialog =
   | { kind: 'client' }
@@ -38,7 +26,7 @@ export default function App({
 }: {
   apiBaseUrl?: string
 }) {
-  const [session, setSession] = useState<Sessao | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loginError, setLoginError] = useState('')
@@ -55,7 +43,7 @@ export default function App({
   const [sessionError, setSessionError] = useState('')
 
   const token = session?.token ?? ''
-  const profile = session?.usuario.perfil ?? null
+  const profile = session?.user.profile ?? null
 
   const unauthorized = useCallback(() => {
     setSession(null)
@@ -88,56 +76,8 @@ export default function App({
     setLoginError('')
 
     try {
-      const response = await fetch(
-        `${apiBaseUrl.replace(/\/+$/, '')}/login`,
-        {
-          method: 'POST',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: email.trim(),
-            senha: password,
-          }),
-          cache: 'no-store',
-          credentials: 'omit',
-        },
-      )
-
-      let data: any
-
-      try {
-        data = await response.json()
-      } catch {
-        throw new Error('A API retornou uma resposta inválida.')
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          data?.erro?.mensagem ||
-          data?.mensagem ||
-          'E-mail ou senha inválidos.',
-        )
-      }
-
-      if (
-        typeof data?.token !== 'string' ||
-        !data.token ||
-        !data?.usuario ||
-        !['ATENDENTE', 'TECNICO'].includes(data.usuario.perfil)
-      ) {
-        throw new Error('A resposta de autenticação é inválida.')
-      }
-
-      if (data.usuario.ativo === false) {
-        throw new Error('Este funcionário está inativo.')
-      }
-
-      setSession({
-        token: data.token,
-        usuario: data.usuario,
-      })
+      const nextSession = await api.login(email, password)
+      setSession(nextSession)
 
       setPassword('')
       setSessionError('')
@@ -312,6 +252,9 @@ export default function App({
             <ClipboardList size={19} />
             <span>Ordens de serviço</span>
           </button>
+          <button className={`nav-item ${page === 'users' ? 'active' : ''}`} disabled={busy || !session} onClick={() => setPage('users')} aria-current={page === 'users' ? 'page' : undefined}>
+            <UserRound size={19} /><span>Usuários</span>
+          </button>
         </nav>
 
         <div className="sidebar-bottom">
@@ -337,7 +280,7 @@ export default function App({
 
             <span className="session-label">
               {session
-                ? `${session.usuario.nome} · ${
+                ? `${session.user.name} · ${
                     profile === 'TECNICO' ? 'Técnico' : 'Atendente'
                   }`
                 : 'Acesso não informado'}
@@ -376,7 +319,7 @@ export default function App({
                   <fieldset className="form-fields" disabled={loginBusy}>
                     <div className="form-body">
                       <label className="field" htmlFor="login-email">
-                        E-mail <span className="required">*</span>
+                        <span>E-mail <span className="required">*</span></span>
                         <input
                           id="login-email"
                           type="email"
@@ -392,7 +335,7 @@ export default function App({
                       </label>
 
                       <label className="field" htmlFor="login-password">
-                        Senha <span className="required">*</span>
+                        <span>Senha <span className="required">*</span></span>
                         <input
                           id="login-password"
                           type="password"
@@ -441,11 +384,11 @@ export default function App({
                     ? 'Clientes'
                     : page === 'orders'
                       ? 'Ordens de serviço'
-                      : 'Equipamentos'}
+                      : page === 'users' ? 'Usuários' : 'Equipamentos'}
                   <span className="heading-dot">.</span>
                 </h1>
 
-                {canCreate && page !== 'orders' && (
+                {canCreate && page !== 'orders' && page !== 'users' && (
                   <button
                     className="button primary"
                     disabled={!isClients && !selectedClient}
@@ -470,7 +413,9 @@ export default function App({
               )}
 
               <div key={sessionVersion}>
-                {page === 'orders' ? (
+                {page === 'users' ? (
+                  <UsersPage api={api} canManage={canCreate} onBusyChange={setBusy} onNotice={setNotice} />
+                ) : page === 'orders' ? (
                   <OrdersPage
                     api={api}
                     canCreate={canCreate}

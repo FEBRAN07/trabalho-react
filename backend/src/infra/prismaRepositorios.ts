@@ -267,6 +267,21 @@ export class UsuarioPrismaRepositorio {
     });
   }
 
+  async listarTodos() {
+    return this.prisma.usuario.findMany({ orderBy: { nome: 'asc' } });
+  }
+
+  async excluir(id: number): Promise<boolean> {
+    try {
+      await this.prisma.usuario.delete({ where: { id } });
+      return true;
+    } catch (error) {
+      if (registroNaoExiste(error)) return false;
+      if (violacaoDeVinculo(error)) throw new Error('EM_USO');
+      throw error;
+    }
+  }
+
   async atualizar(
     id: number,
     dados: {

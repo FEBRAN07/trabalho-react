@@ -4,7 +4,7 @@ Aplicação web para gerenciamento de clientes, equipamentos e ordens de serviç
 
 O objetivo da atividade é desenvolver uma aplicação com **React** que permita **enviar dados para uma API e exibir os dados recebidos dela**. O SysOS atende a esse objetivo com formulários e telas de consulta conectados a uma API REST em Node.js/Express, com persistência em PostgreSQL.
 
-O protótipo atual implementa **CRUD de clientes e equipamentos (cadastro, consulta, alteração e exclusão)**, com frontend integrado a uma API REST e persistência em PostgreSQL. Também permite abrir e consultar ordens de serviço, com filtros por cliente/status e confirmação de OS já em aberto.
+O protótipo atual implementa **CRUD de clientes, equipamentos e usuários (cadastro, consulta, alteração e exclusão)**, com frontend integrado a uma API REST e persistência em PostgreSQL. Também permite abrir e consultar ordens de serviço, com filtros por cliente/status e confirmação de OS já em aberto.
 
 ## Documentação
 
@@ -21,7 +21,8 @@ O protótipo atual implementa **CRUD de clientes e equipamentos (cadastro, consu
 - Consulta dos equipamentos de um cliente e busca por código interno nesse contexto.
 - Edição de clientes e equipamentos, preservando seus identificadores e vínculos.
 - Exclusão com confirmação explícita e tratamento das restrições de vínculo do backend.
-- Acesso à API com JWT e permissões para atendentes e técnicos.
+- Cadastro, consulta, edição, exclusão e situação ativo/inativo de funcionários, nos perfis Atendente e Técnico.
+- Login por e-mail/senha e acesso à API com JWT e permissões para atendentes e técnicos.
 - Abertura de OS com seleção de cliente/equipamento e descrição do problema.
 - Consulta de OS por número e filtros por cliente/status, com detalhes e aviso de OS em aberto.
 - Interface em português voltada a computadores.
@@ -131,28 +132,18 @@ Abra **http://localhost:5173**. O exemplo define `VITE_API_URL=http://localhost:
 
 As origens locais nas portas `5173` e `4173`, com `localhost` ou `127.0.0.1`, são permitidas por padrão no CORS do backend. Se mudar a origem do frontend, atualize `CORS_ORIGINS` e reinicie a API. Essa variável substitui a lista padrão.
 
-### 3. Informar o token de acesso
+### 3. Entrar no sistema
 
-O protótipo ainda não possui uma rota de login. Em outro terminal, na raiz do repositório, gere um token usando a configuração do backend:
+Na interface, informe e-mail e senha de um funcionário ativo. O login usa `POST /api/login`; o JWT recebido é enviado automaticamente nas demais chamadas.
 
-```bash
-npm --prefix backend run -s token:dev -- ATENDENTE 1
-```
-
-Na interface, clique em **Conectar à API**, cole o token e escolha **Usar token**.
+Para o primeiro acesso, configure `ADMIN_NOME`, `ADMIN_EMAIL` e `ADMIN_SENHA` no `.env` do backend e execute `npm --prefix backend run usuario:inicial`. Depois use o menu **Usuários** para cadastrar os demais funcionários. Consulte o [README do backend](backend/README.md#primeiro-funcionário).
 
 | Perfil | Operações permitidas |
 |---|---|
-| `ATENDENTE` | Cadastro, consulta, alteração e exclusão de clientes e equipamentos |
-| `TECNICO` | Consulta de clientes e equipamentos |
+| `ATENDENTE` | CRUD de clientes/equipamentos/usuários; abertura e consulta de OS |
+| `TECNICO` | Consulta de clientes/equipamentos/usuários e OS |
 
-Para testar o perfil de técnico:
-
-```bash
-npm --prefix backend run -s token:dev -- TECNICO 2
-```
-
-A API verifica assinatura, expiração e perfil em cada requisição. O frontend mantém o token apenas na memória da aba; recarregar a página exige informá-lo novamente. **Encerrar acesso** limpa o acesso na interface, mas não revoga o JWT no servidor.
+A API verifica o JWT e a conta atual a cada operação protegida. O token permanece apenas na memória da aba; recarregar exige novo login. **Sair** remove a sessão da interface, sem revogação do JWT no servidor.
 
 Clientes e equipamentos são armazenados pelo backend no PostgreSQL. O frontend não persiste esses cadastros no navegador. Não coloque o `JWT_SECRET` nem tokens em variáveis `VITE_*`, pois elas são públicas no bundle, e não versione arquivos `.env` com credenciais reais.
 

@@ -18,7 +18,7 @@ function montar() {
     listarTodos: jest.fn().mockResolvedValue([usuario]), excluir: jest.fn().mockResolvedValue(true),
   };
   const banco = new BancoMemoria();
-  const app = criarApp({ clientes: banco, equipamentos: banco, jwtSegredo: SEGREDO, contas: repo, usuarios: criarRotasUsuarios(repo) });
+  const app = criarApp({ clientes: banco, equipamentos: banco, ordens: banco, jwtSegredo: SEGREDO, contas: repo, usuarios: criarRotasUsuarios(repo) });
   const login = (corpo: unknown = { email: 'ana@example.com', senha: ' senha ' }) => injetar(app, {
     metodo: 'POST', caminho: '/api/login', corpo, cabecalhos: { Origin: 'http://localhost:5173' },
   });

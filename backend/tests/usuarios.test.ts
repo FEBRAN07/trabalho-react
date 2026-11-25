@@ -9,8 +9,8 @@ const usuario = { id: 3, nome: 'Ana', email: 'ana@example.com', senha: 'segredo'
 function montar() {
   const repo: jest.Mocked<UsuariosRepositorio> = { criar: jest.fn().mockResolvedValue(usuario), listarTodos: jest.fn().mockResolvedValue([usuario]), buscarPorId: jest.fn().mockResolvedValue(usuario), atualizar: jest.fn().mockResolvedValue(usuario), excluir: jest.fn().mockResolvedValue(true) };
   const banco = new BancoMemoria();
-  const app = criarApp({ clientes: banco, equipamentos: banco, jwtSegredo: SEGREDO, usuarios: criarRotasUsuarios(repo) });
-  const chamar = (metodo = 'GET', caminho = '/api/usuarios', corpo?: unknown, perfil: 'ATENDENTE' | 'TECNICO' = 'ATENDENTE') => injetar(app, { metodo, caminho, corpo, cabecalhos: { Authorization: `Bearer ${token(perfil)}`, Origin: 'http://localhost:5173' } });
+  const app = criarApp({ clientes: banco, equipamentos: banco, ordens: banco, contas: { buscarPorEmail: async () => null, buscarPorId: async (id) => ({ ...usuario, id, perfil: id === 9 ? 'TECNICO' : 'ATENDENTE' }), atualizar: async () => null }, jwtSegredo: SEGREDO, usuarios: criarRotasUsuarios(repo) });
+  const chamar = (metodo = 'GET', caminho = '/api/usuarios', corpo?: unknown, perfil: 'ATENDENTE' | 'TECNICO' = 'ATENDENTE') => injetar(app, { metodo, caminho, corpo, cabecalhos: { Authorization: `Bearer ${token(perfil, perfil === 'TECNICO' ? 9 : 7)}`, Origin: 'http://localhost:5173' } });
   return { app, repo, chamar };
 }
 const entrada = { nome: 'Ana', email: 'ana@example.com', senha: 'segredo', perfil: 'ATENDENTE' };
