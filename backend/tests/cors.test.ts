@@ -8,9 +8,11 @@ import { injetar } from './helpers/injetar';
 describe('CORS e contrato HTTP com Express em memória', () => {
   it('permite preflight de POST com Authorization e Content-Type sem exigir JWT', async () => {
     const { app } = montar();
-    const response = await injetar(app, { metodo: 'OPTIONS', caminho: '/api/clientes', cabecalhos: {
-      Origin: 'http://localhost:5173', 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'authorization,content-type',
-    } });
+    const response = await injetar(app, {
+      metodo: 'OPTIONS', caminho: '/api/clientes', cabecalhos: {
+        Origin: 'http://localhost:5173', 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'authorization,content-type',
+      }
+    });
     expect(response.status).toBe(204);
     expect(response.headers['access-control-allow-origin']).toBe('http://localhost:5173');
     expect(response.headers['access-control-allow-headers']).toBe('Authorization, Content-Type');
@@ -37,7 +39,18 @@ describe('CORS e contrato HTTP com Express em memória', () => {
 
   it('aplica origens configuradas e não bloqueia chamadas sem Origin', async () => {
     const banco = new BancoMemoria();
-        const app = criarApp({ clientes: banco, equipamentos: banco, ordens: banco, jwtSegredo: SEGREDO, origensCors: ['https://sysos.example'] });
+    const app = criarApp({
+      clientes: banco,
+      equipamentos: banco,
+      ordens: banco,
+      contas: {
+        buscarPorEmail: async () => null,
+        buscarPorId: async () => null,
+        atualizar: async () => null,
+      },
+      jwtSegredo: SEGREDO,
+      origensCors: ['https://sysos.example'],
+    });
     expect((await injetar(app, { caminho: '/health' })).status).toBe(200);
     const response = await injetar(app, { caminho: '/health', cabecalhos: { Origin: 'https://sysos.example' } });
     expect(response.headers['access-control-allow-origin']).toBe('https://sysos.example');

@@ -1,34 +1,54 @@
-import { PrismaClient } from '@prisma/client';
-import { createInterface } from 'node:readline/promises';
-import { Writable } from 'node:stream';
-import { stdin, stdout } from 'node:process';
-import { z } from 'zod';
-import { UsuarioPrismaRepositorio } from '../src/infra/prismaRepositorios';
 
-/** Provisionamento local: não cria rota pública de cadastro. */
-async function main() {
-  const prisma = new PrismaClient();
-  let ocultar = false;
-  const saida = new Writable({ write(chunk, _encoding, callback) { if (!ocultar) stdout.write(chunk); callback(); } });
-  const entrada = createInterface({ input: stdin, output: saida, terminal: !!stdin.isTTY });
-  try {
-    if (await prisma.usuario.count()) throw new Error('Já existem usuários. Cadastre novos funcionários pela tela Usuários.');
-    const nome = z.string().trim().min(1).parse(await entrada.question('Nome: '));
-    const email = z.string().trim().email().parse(await entrada.question('E-mail: '));
-    stdout.write('Senha: ');
-    ocultar = true;
-    const senha = z.string().min(1).max(1024).parse(await entrada.question(''));
-    stdout.write('\nConfirme a senha: ');
-    const confirmacao = await entrada.question('');
-    if (senha !== confirmacao) throw new Error('As senhas não conferem. Informe a mesma senha nas duas linhas.');
-    ocultar = false; stdout.write('\n');
-    const usuario = await new UsuarioPrismaRepositorio(prisma).criar({ nome, email, senha, perfil: 'ATENDENTE' });
-    console.log(`Atendente inicial criado: ${usuario.email} (#${usuario.id}).`);
-  } finally {
-    ocultar = false; entrada.close(); saida.end(); await prisma.$disconnect();
+import { PrismaClient } from '@prisma/client';
+import { UsuarioPrismaRepositorio } from '../src/infra/prismaRepositorios';
+import type { Perfil } from '../src/dominio/tipos';
+
+const prisma = new PrismaClient();
+
+async function main(): Promise<void> {
+  const nome = process.env.ADMIN_NOME?.trim();
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const senha = process.env.ADMIN_SENHA;
+  const perfil = (process.env.ADMIN_PERFIL ?? 'ATENDENTE') as Perfil;
+
+  if (!nome || !email || !senha) {
+    throw new Error(
+      'Informe ADMIN_NOME, ADMIN_EMAIL e ADMIN_SENHA no arquivo .env.',
+    );
   }
+
+  if (!['ATENDENTE', 'TECNICO'].includes(perfil)) {
+    throw new Error('ADMIN_PERFIL deve ser ATENDENTE ou TECNICO.');
+  }
+
+  const repo = new UsuarioPrismaRepositorio(prisma);
+
+  const existente = await repo.buscarPorEmail(email);
+
+  if (existente) {
+    console.log(`Já existe um usuário cadastrado com o e-mail ${email}.`);
+    return;
+  }
+
+  const usuario = await repo.criar({
+    nome,
+    email,
+    senha,
+    perfil,
+  });
+
+  console.log('Funcionário inicial cadastrado com sucesso!');
+  console.log(`ID: ${usuario.id}`);
+  console.log(`Nome: ${usuario.nome}`);
+  console.log(`E-mail: ${usuario.email}`);
+  console.log(`Perfil: ${usuario.perfil}`);
 }
-main().catch(() => {
-  console.error('Não foi possível criar o atendente inicial. Confira os dados, a confirmação da senha, a conexão e se já existem usuários.');
-  process.exitCode = 1;
-});
+
+main()
+  .catch((erro: unknown) => {
+    console.error('Erro ao cadastrar funcionário inicial:', erro);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

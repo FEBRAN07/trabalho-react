@@ -91,3 +91,15 @@ model OrdemServico {
   @@index([status])
   @@index([clienteId, equipamentoCodigoInterno])
 }
+
+model Usuario {
+  id       Int     @id @default(autoincrement())
+  nome     String  @db.VarChar(150)
+  email    String  @unique @db.VarChar(254)
+  senha    String  @db.VarChar(255)
+  perfil   String  @db.VarChar(20)
+  ativo    Boolean @default(true)
+  criadoEm DateTime @default(now())
+
+  @@index([nome])
+}

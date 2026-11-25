@@ -1,4 +1,7 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import {
+  Prisma,
+  PrismaClient,
+} from '@prisma/client';
 import {
   AtualizacaoCliente,
   AtualizacaoEquipamento,
@@ -9,14 +12,16 @@ import {
   NovoCliente,
   NovoEquipamento,
   ResultadoExclusao,
+  Perfil,
 } from '../dominio/tipos';
 
+import { gerarHash } from '../seguranca/senhas';
 import { registroNaoExiste, violacaoDeVinculo } from './errosBanco';
 
 /** Única camada que conhece o Prisma/PostgreSQL. */
 
 export class ClientePrismaRepositorio implements ClienteRepositorio {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) { }
 
   async criar(dados: NovoCliente): Promise<Cliente> {
     const c = await this.prisma.cliente.create({
@@ -110,7 +115,7 @@ export class ClientePrismaRepositorio implements ClienteRepositorio {
 }
 
 export class EquipamentoPrismaRepositorio implements EquipamentoRepositorio {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient) { }
 
   /**
    * Transação única: o UPDATE com incremento trava a linha do cliente, então
@@ -225,4 +230,78 @@ function paraCliente(c: {
     atualizadoEm: c.atualizadoEm,
     atualizadoPorId: c.atualizadoPorId,
   };
+}
+
+export class UsuarioPrismaRepositorio {
+  constructor(private readonly prisma: PrismaClient) { }
+
+  async buscarPorEmail(email: string) {
+    return this.prisma.usuario.findUnique({
+      where: {
+        email: email.trim().toLowerCase(),
+      },
+    });
+  }
+
+  async buscarPorId(id: number) {
+    return this.prisma.usuario.findUnique({
+      where: { id },
+    });
+  }
+
+  async criar(dados: {
+    nome: string;
+    email: string;
+    senha: string;
+    perfil: Perfil;
+  }) {
+    const senhaHash = await gerarHash(dados.senha);
+
+    return this.prisma.usuario.create({
+      data: {
+        nome: dados.nome.trim(),
+        email: dados.email.trim().toLowerCase(),
+        senha: senhaHash,
+        perfil: dados.perfil,
+      },
+    });
+  }
+
+  async atualizar(
+    id: number,
+    dados: {
+      nome?: string;
+      email?: string;
+      senha?: string;
+      perfil?: Perfil;
+      ativo?: boolean;
+    },
+  ) {
+    try {
+      const { senha, email, nome, ...resto } = dados;
+
+      return await this.prisma.usuario.update({
+        where: { id },
+        data: {
+          ...resto,
+          ...(nome !== undefined ? { nome: nome.trim() } : {}),
+          ...(email !== undefined
+            ? { email: email.trim().toLowerCase() }
+            : {}),
+          ...(senha ? { senha: await gerarHash(senha) } : {}),
+        },
+      });
+    } catch(error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === 'P2025'
+      ) {
+        return null;
+      }
+
+      throw error;
+    }
+}
 }
