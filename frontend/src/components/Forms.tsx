@@ -112,31 +112,23 @@ export function ClientForm({
       onBusyChange?.(false)
     }
   }
-
-  return (
-    <form onSubmit={submit} noValidate aria-busy={saving}>
-      <fieldset className="form-fields" disabled={saving}>
-        <div className="form-body">
-          <div className="form-section-heading">
-            <span className="section-icon"><UserRound size={19} /></span>
-            <h3>Dados do cliente</h3>
-          </div>
-
-          <label className="field" htmlFor="client-name">
-            Nome completo <span className="required">*</span>
-            <input
-              id="client-name"
-              autoFocus
-              autoComplete="name"
-              maxLength={150}
-              placeholder="Ex.: Ana Carolina Souza"
-              value={input.name}
-              onChange={e => change('name', e.target.value)}
-              aria-required="true"
-              aria-invalid={!!errors.name}
-              aria-describedby={errors.name ? 'name-error' : undefined}
-            />
-            <FieldError id="name-error" error={errors.name} />
+  return <form onSubmit={submit} noValidate aria-busy={saving}>
+    <fieldset className="form-fields" disabled={saving}>
+      <div className="form-body">
+        <div className="form-section-heading"><span className="section-icon"><UserRound size={19} /></span><h3>Dados do cliente</h3></div>
+        <label className="field" htmlFor="client-name">Nome completo <span className="required">*</span>
+          <input id="client-name" autoFocus autoComplete="name" maxLength={150} placeholder="Ex.: Ana Carolina Souza" value={input.name} onChange={e => change('name', e.target.value)} aria-required="true" aria-invalid={!!errors.name} aria-describedby={errors.name ? 'name-error' : undefined} />
+          <FieldError id="name-error" error={errors.name} />
+        </label>
+        <div className="contact-heading"><h4>Informações de contato <span className="required">*</span></h4><span>Preencha pelo menos uma opção</span></div>
+        <div className="form-grid">
+          <label className="field" htmlFor="client-phone">Telefone
+            <input id="client-phone" type="tel" inputMode="numeric" autoComplete="tel-national" maxLength={15} placeholder="(42) 99922-2222" value={input.phone} onChange={e => change('phone', e.target.value)} aria-invalid={!!errors.phone || !!errors.contact} aria-describedby="phone-hint phone-error contact-error" />
+            <span className="field-hint" id="phone-hint">Inclua o DDD.</span><FieldError id="phone-error" error={errors.phone} />
+          </label>
+          <label className="field" htmlFor="client-email">E-mail
+            <input id="client-email" type="email" autoComplete="email" maxLength={254} placeholder="nome@exemplo.com" value={input.email} onChange={e => change('email', e.target.value)} aria-invalid={!!errors.email || !!errors.contact} aria-describedby="email-error contact-error" />
+            <FieldError id="email-error" error={errors.email} />
           </label>
 
           <div className="contact-heading">
