@@ -1,6 +1,21 @@
+<<<<<<< HEAD
 # SysOS — Frontend integrado à API (clientes, equipamentos e ordens de serviço)
 
 React, TypeScript e Vite, com interface voltada a computadores, CRUD completo de clientes/equipamentos e abertura/consulta de ordens de serviço. O frontend usa a API Express em `../backend`; clientes e equipamentos são persistidos pelo backend, sem cadastro ou cache em `localStorage`.
+=======
+# SysOS — Frontend
+
+Interface da aplicação SysOS, apresentada na disciplina de **Desenvolvimento Web** para demonstrar o uso de **React** com entrada e saída de dados de uma API. Desenvolvida com React, TypeScript e Vite, é voltada a computadores e oferece CRUD de clientes e equipamentos. O frontend usa a API Express em `../backend`; clientes e equipamentos são persistidos pelo backend, sem cadastro ou cache em `localStorage`.
+
+## Como o frontend se comunica com a API
+
+- **Entrada de dados:** os formulários são controlados pelo estado do React. Ao cadastrar ou editar um cliente/equipamento, os dados são enviados em JSON por `POST` ou `PUT`. A exclusão usa `DELETE` após confirmação.
+- **Saída de dados:** buscas e consultas fazem requisições `GET`. Os resultados da API são armazenados em estado e apresentados nas listas e nos detalhes dos cadastros.
+- **Cliente HTTP:** `src/lib/api.ts` centraliza as chamadas com `fetch`, o envio do JWT, a conversão dos dados da API para os modelos da interface e o tratamento de erros.
+- **Retorno ao usuário:** a interface apresenta carregamento durante as requisições, confirmação após sucesso e mensagens de erro quando o backend recusa a operação ou está indisponível.
+
+Por exemplo, cadastrar um cliente envia nome e contato para `POST /api/clientes`; a resposta fornece o identificador que será usado nas consultas e no cadastro de seus equipamentos.
+>>>>>>> 3b26d1b (docs: alterar documentacao)
 
 ## Executar
 
@@ -131,9 +146,9 @@ npm run preview
 
 A suíte Jest testa validações alinhadas ao contrato, formatação de telefone, URLs aninhadas, mapeamento das respostas, Bearer, payloads de POST, confirmação de duplicidade, erros de campos, acesso expirado, falha de rede, cancelamento, PUT/DELETE e renderização dos formulários e estados de consulta. `fetch` é simulado nos testes de contrato; os testes de renderização usam React no ambiente Node, sem navegador.
 
-O ambiente de testes não mantém mais o banco local em memória da primeira versão. Acessos a `localStorage` e `sessionStorage` são bloqueados por mocks, e `fetch` rejeita chamadas sem resposta explicitamente simulada. Assim, os testes não dependem de uma API em execução nem de dados reais. Os mocks são restaurados e o ambiente é reiniciado entre os casos. Testes de renderização não exercitam cliques, submissão de formulários ou efeitos de consulta; esses fluxos continuam no roteiro manual ou exigem uma suíte de interação com DOM.
+Os testes do frontend simulam as respostas da API e não mantêm um banco de dados local. Acessos a `localStorage` e `sessionStorage` são bloqueados por mocks, e `fetch` rejeita chamadas sem resposta explicitamente simulada. Assim, os testes não dependem de uma API em execução nem de dados reais. Os mocks são restaurados e o ambiente é reiniciado entre os casos. Testes de renderização não exercitam cliques, submissão de formulários ou efeitos de consulta; esses fluxos continuam no roteiro manual ou exigem uma suíte de interação com DOM.
 
-Na pasta backend, `npm test -- --runInBand cors.test.ts` exercita o Express em memória, sem porta ou PostgreSQL: preflight, origens, JWT, cadastro, duplicidade, busca e separação dos equipamentos por cliente. A suíte HTTP original usa Supertest e precisa de permissão para abrir portas. A integração Prisma exige banco de testes e apaga tabelas, conforme o README do backend; não foi executada nesta adaptação.
+Na pasta backend, `npm test -- --runInBand cors.test.ts` exercita o Express em memória, sem porta ou PostgreSQL: preflight, origens, JWT, cadastro, duplicidade, busca e separação dos equipamentos por cliente. As suítes HTTP com Supertest precisam de permissão para abrir portas. A integração Prisma exige banco de testes e apaga tabelas, conforme o README do backend.
 
 Roteiro manual com a API e um banco de desenvolvimento:
 
@@ -159,4 +174,8 @@ Roteiro manual com a API e um banco de desenvolvimento:
 - `src/components/Details.tsx`: consultas individuais.
 - `src/App.tsx`: navegação, seleção de cliente e acesso por token.
 
+<<<<<<< HEAD
 O escopo inclui CRUD de clientes/equipamentos e abertura/consulta de OS, respeitando vínculos e histórico. Pagamento, entrega, estoque, administração da loja e implementação do login não integram esta etapa. Nenhuma skill específica ou subagente foi utilizado nesta adaptação.
+=======
+O escopo agora inclui cadastro, consulta, alteração e exclusão de clientes e equipamentos, respeitando vínculos e histórico. Pagamento, entrega, estoque, administração da loja e implementação do login não integram esta etapa.
+>>>>>>> 3b26d1b (docs: alterar documentacao)

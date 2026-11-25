@@ -1,16 +1,17 @@
 # SysOS
 
-Projeto acadêmico de um sistema de gerenciamento de ordens de serviço para assistências técnicas de pequeno e médio porte, desenvolvido no contexto da disciplina de Gestão de Projetos.
+Aplicação web para gerenciamento de clientes, equipamentos e ordens de serviço de assistências técnicas de pequeno e médio porte, apresentada na disciplina de **Desenvolvimento Web**.
 
+<<<<<<< HEAD
 O protótipo atual implementa **CRUD de clientes e equipamentos (cadastro, consulta, alteração e exclusão)**, com frontend integrado a uma API REST e persistência em PostgreSQL. Também permite abrir e consultar ordens de serviço, com filtros por cliente/status e confirmação de OS já em aberto.
+=======
+O protótipo atual implementa **CRUD de clientes e equipamentos (cadastro, consulta, alteração e exclusão)**, com frontend integrado a uma API REST e persistência em PostgreSQL. A API também disponibiliza abertura e consulta de ordens de serviço; as telas atuais do frontend integram o cadastro e a consulta de clientes e equipamentos.
+>>>>>>> 3b26d1b (docs: alterar documentacao)
 
 ## Documentação
 
 - [Backend](backend/README.md): configuração da API, autenticação, endpoints, testes e deploy.
 - [Frontend](frontend/README.md): configuração da interface, fluxos de CRUD e testes.
-- [Modelo de dados](backend/docs/MODELO_DADOS.md).
-- [Rastreabilidade dos requisitos](backend/docs/RASTREABILIDADE.md).
-- [Registro de uso de IA do backend](backend/docs/REGISTRO_USO_IA.md).
 
 ## Funcionalidades atuais
 
@@ -29,7 +30,19 @@ O protótipo atual implementa **CRUD de clientes e equipamentos (cadastro, consu
 
 Não há listagem global de clientes ou equipamentos. Primeiro o funcionário busca um cliente; depois, seleciona-o para consultar ou cadastrar seus equipamentos. Um equipamento é identificado pelo par **cliente + código interno**, portanto clientes diferentes podem ter equipamentos com o mesmo código.
 
+<<<<<<< HEAD
 Atualização de status da OS, diagnóstico, orçamento, reparo e conclusão técnica são etapas futuras. Pagamento, entrega física de aparelhos, estoque e administração da loja ficam fora do escopo atual do projeto.
+=======
+Atualização de status de OS, diagnóstico, orçamento, reparo e conclusão técnica ainda não estão implementados. Pagamento, entrega física de aparelhos, estoque e administração da loja ficam fora do escopo atual do projeto.
+
+## Integração entre React e API
+
+Os formulários do React mantêm os valores digitados em estado e os enviam em JSON por requisições HTTP. O backend valida os dados, executa as operações no banco e responde com o resultado ou com uma mensagem de erro.
+
+As telas de consulta fazem requisições `GET` e exibem as respostas em listas e detalhes. Cadastro, edição e exclusão usam `POST`, `PUT` e `DELETE`. A interface apresenta carregamento, sucesso e falhas conforme a resposta da API; os cadastros ficam persistidos no PostgreSQL.
+
+Por exemplo, ao cadastrar um cliente, o frontend envia nome e contato para `POST /api/clientes`. Após a confirmação do servidor, mostra o cliente criado com o identificador recebido da API. Uma busca posterior usa `GET /api/clientes?busca=...` para recuperar e apresentar os dados.
+>>>>>>> 3b26d1b (docs: alterar documentacao)
 
 ## Tecnologias
 
@@ -51,8 +64,7 @@ prototipo-sysos/
 │   ├── .env.example
 │   ├── src/          # API, serviços e repositórios
 │   ├── prisma/       # Modelo e migrações do banco
-│   ├── tests/        # Regras, rotas, CORS e integração
-│   └── docs/         # Documentação do backend
+│   └── tests/        # Validações, rotas, CORS e integração
 └── frontend/
     ├── README.md
     ├── .env.example
@@ -168,6 +180,6 @@ Os comandos abaixo são executados a partir da raiz do repositório, após insta
 
 Os testes de renderização do frontend usam React no ambiente Node; não substituem a conferência visual e os testes de interação em navegador. Os testes de rotas com Supertest precisam de permissão para abrir portas locais. A suíte de CORS usa Express em memória, sem abrir portas.
 
-**Integração com PostgreSQL:** `npm --prefix backend run test:int` executa `TRUNCATE` e apaga os dados das tabelas de clientes e equipamentos. Use exclusivamente um banco de testes, indicado pela `DATABASE_URL` carregada pelo comando. Se `DATABASE_URL` já estiver definida no ambiente, a suíte de integração também poderá ser incluída em uma execução geral dos testes do backend. Consulte o [README do backend](backend/README.md) antes de executá-la.
+**Integração com PostgreSQL:** `npm --prefix backend run test:int` executa `TRUNCATE` e apaga os dados de clientes, equipamentos e ordens de serviço. Use exclusivamente um banco de testes, indicado pela `DATABASE_URL` carregada pelo comando. Se `DATABASE_URL` já estiver definida no ambiente, a suíte de integração também poderá ser incluída em uma execução geral dos testes do backend. Consulte o [README do backend](backend/README.md) antes de executá-la.
 
 Os READMEs de cada aplicação contêm os detalhes dos contratos da API, configurações, limitações e roteiros de validação manual.

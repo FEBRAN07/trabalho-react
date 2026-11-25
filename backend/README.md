@@ -1,13 +1,8 @@
-# SysOS — Backend (protótipo: cliente e equipamento)
+# SysOS — Backend
 
-API REST em **TypeScript / Node.js + Express**, com **Prisma + PostgreSQL**,
-testes em **Jest** e hospedagem prevista no **Render** (stack definida nos
-slides do projeto).
+API REST da aplicação SysOS, apresentada na disciplina de **Desenvolvimento Web**. O backend recebe os dados enviados pelo frontend React, realiza validações e operações no PostgreSQL e devolve respostas JSON para apresentação na interface.
 
-> **Escopo:** CRUD completo de **clientes** e **equipamentos** — cadastro,
-> consulta, alteração e exclusão (PB02, PB03 e PB18). Equipamento é entidade
-> fraca: pertence obrigatoriamente a um cliente. Veja `docs/` para o modelo de
-> dados, a rastreabilidade e o registro de uso de IA.
+Desenvolvido com **TypeScript, Node.js, Express, Prisma e PostgreSQL**, com testes em **Jest**. Disponibiliza CRUD de clientes e equipamentos, além de abertura e consulta de ordens de serviço. Cada equipamento pertence a um cliente e é identificado pelo par `clienteId` + `codigoInterno`.
 
 ## Pré-requisitos
 
@@ -66,12 +61,12 @@ npm run dev                 # http://localhost:3000
 ```bash
 npm run typecheck
 npm test            # regras e rotas (repositório em memória, sem banco)
-npm run test:cov    # com cobertura (meta de referência: 70%)
+npm run test:cov    # relatório de cobertura
 npm run test:int    # integração com PostgreSQL real
 ```
 
 > **Atenção:** `npm run test:int` lê a `DATABASE_URL` do `.env` e executa
-> `TRUNCATE` nas tabelas `Cliente` e `Equipamento`, **apagando os dados
+> `TRUNCATE` nas tabelas de clientes, equipamentos e ordens de serviço, **apagando os dados
 > existentes**. Use um banco de testes.
 
 Sem `DATABASE_URL` carregada, a suíte de integração é ignorada (aparece como
@@ -79,8 +74,7 @@ Sem `DATABASE_URL` carregada, a suíte de integração é ignorada (aparece como
 
 ## Autenticação
 
-Toda rota sob `/api` exige `Authorization: Bearer <token>` (RF02). O **login**
-é o PB01 e não faz parte deste protótipo; a API apenas valida tokens JWT
+Toda rota sob `/api` exige `Authorization: Bearer <token>`. A versão atual não possui rota de login; a API valida tokens JWT
 (HS256, com `sub` = id do funcionário e `perfil` = `ATENDENTE` ou `TECNICO`).
 
 Para testar manualmente, gere um token de desenvolvimento (o script `token:dev`
@@ -99,7 +93,7 @@ Bash (Linux/Mac):
 TOKEN=$(npm run -s token:dev -- ATENDENTE 1)
 ```
 
-Matriz de acesso **proposta**: escrita (`POST`, `PUT` e `DELETE`) só para
+Permissões de acesso: escrita (`POST`, `PUT` e `DELETE`) só para
 `ATENDENTE`; leitura (`GET`) para `ATENDENTE` e `TECNICO`.
 
 ## Endpoints
@@ -123,20 +117,18 @@ Matriz de acesso **proposta**: escrita (`POST`, `PUT` e `DELETE`) só para
 
 - **`PUT` substitui os dados editáveis** (não é parcial): envie o cadastro
   completo. Num cliente, omitir um contato o remove, desde que reste ao menos
-  um (RN07). Num equipamento, `marca`, `modelo` e `numeroSerie` omitidos ou
+  um. Num equipamento, `marca`, `modelo` e `numeroSerie` omitidos ou
   vazios passam a nulos; só `tipo` é obrigatório.
 - **Campos que nunca mudam:** `id` do cliente, `clienteId` e `codigoInterno` do
-  equipamento (a identidade da entidade fraca), e `criadoEm`/`criadoPorId`.
+  equipamento, e `criadoEm`/`criadoPorId`.
   Enviá-los no corpo resulta em `400`. Não há transferência de equipamento para
   outro cliente.
-- **Quem alterou e quando (RN22):** a resposta traz `atualizadoEm` e
+- **Quem alterou e quando:** a resposta traz `atualizadoEm` e
   `atualizadoPorId` (nulos enquanto o cadastro nunca foi alterado).
-- **Exclusão e histórico (RN20):** nada apaga o histórico. O banco recusa a
-  exclusão de cliente que tenha equipamentos (e, quando existirem, OS), e de
+- **Exclusão e histórico:** nada apaga o histórico. O banco recusa a
+  exclusão de cliente que tenha equipamentos ou OS, e de
   equipamento que tenha OS. Para excluir um cliente com equipamentos, exclua
-  antes os equipamentos que não tenham OS. **Política proposta:** o PB18 deixa
-  exclusão e inativação "dependentes de política própria a acordar"; aqui só se
-  exclui o que não tem nenhum vínculo.
+  antes os equipamentos que não tenham OS. Apenas cadastros sem vínculos podem ser excluídos.
 - **Códigos não são reaproveitados:** o `id` do cliente e o `codigoInterno` do
   equipamento excluídos nunca são reutilizados por novos cadastros.
 - **Resposta do `DELETE`:** `200` com o cadastro excluído em JSON (não `204`),
@@ -215,11 +207,10 @@ As respostas de erro nunca incluem stack trace, SQL ou nomes de tabela.
 ```
 prisma/            schema.prisma e migration SQL
 src/dominio/       tipos, interfaces de repositório e validação (zod)
-src/servicos/      regras de negócio (RN01, RN07, RN08, RN09, RN22…)
+src/servicos/      operações e validações de clientes, equipamentos e OS
 src/infra/         repositórios Prisma (única camada que conhece o banco)
 src/http/          app Express, autenticação/perfil e tratamento de erros
 tests/             Jest + Supertest; tests/integracao exige PostgreSQL
-docs/              modelo de dados, rastreabilidade, registro de uso de IA
 ```
 
 ## Integração com o frontend e CORS
@@ -234,14 +225,32 @@ O middleware trata preflight `OPTIONS` antes do JWT, permite `GET`, `POST`, `PUT
 npm test -- --runInBand cors.test.ts
 ```
 
-Essa suíte usa o Express e os serviços reais com repositórios em memória e injeção HTTP sem abrir portas. Ela verifica CORS, preservação do JWT nas operações efetivas e os contratos de cadastro/busca usados pelo frontend. Os demais testes HTTP continuam usando Supertest. Os testes de PostgreSQL não são necessários para verificar CORS e não foram executados nesta adaptação.
+Essa suíte usa o Express e os serviços reais com repositórios em memória e injeção HTTP sem abrir portas. Ela verifica CORS, preservação do JWT nas operações efetivas e os contratos de cadastro/busca usados pelo frontend. Os demais testes HTTP continuam usando Supertest. A suíte de CORS não depende de PostgreSQL.
 
-## Ordens de serviço (PB04 e PB05)
+## Ordens de serviço
 
-Além do cadastro de clientes e equipamentos, a API **abre e consulta ordens de
-serviço**: `POST /api/ordens-servico`, `GET /api/ordens-servico?clienteId=&status=`
-e `GET /api/ordens-servico/:numero`. A descrição completa (corpo, respostas,
-erros, regras e decisões) está em [`docs/ORDEM_SERVICO.md`](docs/ORDEM_SERVICO.md).
+A API permite abrir e consultar ordens de serviço. As rotas usam a mesma autenticação JWT das demais operações.
 
-Depois de atualizar o código, rode `npx prisma generate` e `npx prisma migrate deploy`
-(a migration `0003_ordem_servico` cria a tabela nova sem alterar os dados existentes).
+| Método e rota | Perfil | Descrição |
+|---|---|---|
+| `POST /api/ordens-servico` | atendente | Abre uma OS; retorna `201` com os dados e o cabeçalho `Location` |
+| `GET /api/ordens-servico?clienteId=&status=` | ambos | Lista até 100 OS, mais recentes primeiro, com filtros opcionais por cliente e status |
+| `GET /api/ordens-servico/:numero` | ambos | Consulta uma OS pelo número |
+
+Exemplo de corpo para abertura:
+
+```json
+{
+  "clienteId": 1,
+  "equipamentoCodigoInterno": 1,
+  "problemaRelatado": "Não liga"
+}
+```
+
+Cliente, equipamento do mesmo cliente e problema relatado são obrigatórios. O problema deve ter de 1 a 1000 caracteres. O número, a data, o autor e o status inicial **Aguardando Diagnóstico** são definidos pelo servidor.
+
+Se já houver OS em aberto para o equipamento, a API retorna `409 EQUIPAMENTO_COM_OS_EM_ABERTO`, com as ordens existentes em `erro.detalhes.ordensEmAberto`. Para confirmar a abertura de outra ordem, repita a requisição acrescentando `"confirmarOsEmAberto": true`. OS com status `Concluída` ou `Cancelada` não entram nesse alerta.
+
+As respostas de abertura e consulta incluem número, status, problema relatado, data, autor e os dados do cliente e do equipamento. A listagem retorna `{ "total": 2, "ordens": [ ... ] }`. O filtro de status usa igualdade exata. Não há rotas de edição ou exclusão de OS.
+
+A migração `0003_ordem_servico` cria a tabela de ordens de serviço. Para atualizar um banco existente, execute `npx prisma generate` e `npx prisma migrate deploy` na pasta backend.
