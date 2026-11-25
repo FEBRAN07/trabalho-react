@@ -20,6 +20,11 @@ export function montar(banco = new BancoMemoria()) {
     clientes: banco,
     equipamentos: banco,
     ordens: banco,
+    contas: {
+      buscarPorEmail: async () => null,
+      buscarPorId: async () => null,
+      atualizar: async () => null,
+    },
     jwtSegredo: SEGREDO,
   });
   const api = request(app);

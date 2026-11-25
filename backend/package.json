@@ -12,7 +12,8 @@
     "test": "jest",
     "test:int": "node --env-file=.env node_modules/jest/bin/jest.js integracao",
     "test:cov": "jest --coverage",
-    "token:dev": "tsx --env-file=.env scripts/gerar-token-dev.ts"
+    "token:dev": "tsx --env-file=.env scripts/gerar-token-dev.ts",
+    "usuario:inicial": "tsx --env-file=.env scripts/criar-usuario-inicial.ts"
   },
   "dependencies": {
     "@prisma/client": "6.19.3",

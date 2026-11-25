@@ -9,6 +9,58 @@ export interface EquipmentDto {
 }
 export interface ClientSearchResult { clients: Client[]; offerCreate: boolean; total: number }
 
+export interface Session {
+  token: string;
+  usuario: {
+    id: number;
+    nome: string;
+    email: string;
+    perfil: 'ATENDENTE' | 'TECNICO';
+    ativo: boolean;
+    criadoEm: string;
+  };
+}
+
+export async function loginFuncionario(
+  baseUrl: string,
+  email: string,
+  senha: string,
+): Promise<Session> {
+  let response: Response;
+
+  try {
+    response = await fetch(
+      `${baseUrl.replace(/\/+$/, '')}/login`,
+      {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, senha }),
+        cache: 'no-store',
+        credentials: 'omit',
+      },
+    );
+  } catch {
+    throw new ApiError(
+      'Não foi possível conectar à API.',
+    );
+  }
+
+  const body = await response.json();
+
+  if (!response.ok) {
+    throw new ApiError(
+      body?.erro?.mensagem || 'Falha ao realizar login.',
+      response.status,
+      body?.erro?.codigo,
+    );
+  }
+
+  return body as Session;
+}
+
 export function clientFromApi(data: ClientDto): Client {
   return { id: String(data.id), code: `#${data.id}`, name: data.nome, phone: formatPhone(data.telefone ?? ''), email: data.email ?? '', createdAt: data.criadoEm }
 }
