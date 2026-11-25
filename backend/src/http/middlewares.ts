@@ -1,6 +1,7 @@
 import { NextFunction, Request, RequestHandler, Response } from "express";
 import jwt from "jsonwebtoken";
 import { ZodError } from "zod";
+import type { LoginRepositorio } from '../api/loginController';
 import { Perfil, Usuario } from "../dominio/tipos";
 import { AppError, erros } from "../shared/erros";
 
@@ -12,29 +13,24 @@ declare module "express-serve-static-core" {
 
 const PERFIS: readonly Perfil[] = ["ATENDENTE", "TECNICO"];
 
-/**
- * RF02: toda rota da API exige login. Valida o token (assinatura e expiração)
- * e carrega o funcionário. A emissão do token (login/logout) pertence ao PB01
- * e NÃO faz parte deste protótipo.
- */
-export function autenticar(segredo: string): RequestHandler {
+/** Valida o JWT e a situação/perfil atual da conta nas rotas protegidas. */
+export function autenticar(segredo: string, contas: Pick<LoginRepositorio, 'buscarPorId'>): RequestHandler {
     return (req, _res, next) => {
-        const cabecalho = req.headers.authorization ?? "";
-        const [esquema, token] = cabecalho.split(" ");
-        if (esquema !== "Bearer" || !token) return next(erros.naoAutenticado());
-        try {
-            const payload = jwt.verify(token, segredo, { algorithms: ["HS256"] });
-            if (typeof payload === "string") return next(erros.naoAutenticado());
+        void (async () => {
+            const [esquema, token] = (req.headers.authorization ?? '').split(' ');
+            if (esquema !== 'Bearer' || !token) return next(erros.naoAutenticado());
+            let payload: jwt.JwtPayload | string;
+            try { payload = jwt.verify(token, segredo, { algorithms: ['HS256'] }); }
+            catch { return next(erros.naoAutenticado()); }
+            if (typeof payload === 'string') return next(erros.naoAutenticado());
             const id = Number(payload.sub);
-            const perfil = payload["perfil"] as Perfil;
-            if (!Number.isInteger(id) || id <= 0 || !PERFIS.includes(perfil)) {
-                return next(erros.naoAutenticado());
-            }
+            const perfil = payload['perfil'] as Perfil;
+            if (!Number.isInteger(id) || id <= 0 || !PERFIS.includes(perfil)) return next(erros.naoAutenticado());
+            const conta = await contas.buscarPorId(id);
+            if (!conta || !conta.ativo || conta.perfil !== perfil) return next(erros.naoAutenticado());
             req.usuario = { id, perfil };
             next();
-        } catch {
-            next(erros.naoAutenticado());
-        }
+        })().catch(next);
     };
 }
 

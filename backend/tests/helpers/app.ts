@@ -22,7 +22,7 @@ export function montar(banco = new BancoMemoria()) {
     ordens: banco,
     contas: {
       buscarPorEmail: async () => null,
-      buscarPorId: async () => null,
+      buscarPorId: async (id) => ({ id, nome: 'Funcionário teste', email: `teste${id}@example.com`, senha: 'hash-teste', perfil: id === 9 ? 'TECNICO' : 'ATENDENTE', ativo: true, criadoEm: new Date() }),
       atualizar: async () => null,
     },
     jwtSegredo: SEGREDO,

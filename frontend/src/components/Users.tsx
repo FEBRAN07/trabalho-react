@@ -77,8 +77,8 @@ export function UserDetails({ api, id, canManage, onEdit, onDelete }: { api: Api
 }
 
 export function UserTable({ users, onDetails }: { users: User[]; onDetails: (user: User) => void }) {
-  return <div className="table-wrap"><table><thead><tr><th>USUÁRIO</th><th>E-MAIL</th><th>PERFIL</th><th>SITUAÇÃO</th><th><span className="sr-only">Ações</span></th></tr></thead><tbody>{users.map(user => <tr key={user.id}>
-    <td><div className="identity-cell"><div><button className="row-name" onClick={() => onDetails(user)}>{user.name}</button><span className="record-code">#{user.id}</span></div></div></td><td>{user.email}</td><td>{profileLabel(user.profile)}</td><td>{user.active ? 'Ativo' : 'Inativo'}</td><td><button className="button secondary" onClick={() => onDetails(user)}>Ver detalhes</button></td>
+  return <div className="table-wrap"><table className="users-table"><thead><tr><th>USUÁRIO</th><th>E-MAIL</th><th>PERFIL</th><th>SITUAÇÃO</th><th><span className="sr-only">Ações</span></th></tr></thead><tbody>{users.map(user => <tr key={user.id}>
+    <td><div className="identity-cell"><div><button className="row-name" onClick={() => onDetails(user)}>{user.name}</button><span className="record-code">#{user.id}</span></div></div></td><td>{user.email}</td><td>{profileLabel(user.profile)}</td><td className="user-status-cell">{user.active ? 'Ativo' : 'Inativo'}</td><td><button className="button secondary" onClick={() => onDetails(user)}>Ver detalhes</button></td>
   </tr>)}</tbody></table></div>
 }
 

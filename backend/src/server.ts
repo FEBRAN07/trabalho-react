@@ -2,6 +2,7 @@
 import { PrismaClient } from '@prisma/client';
 import { carregarConfig } from './config';
 import { criarApp } from './http/app';
+import { criarRotasUsuarios } from './api/usuariosRoutes';
 
 import {
   ClientePrismaRepositorio,
@@ -21,6 +22,7 @@ const app = criarApp({
   equipamentos: new EquipamentoPrismaRepositorio(prisma),
   ordens: new OrdemServicoPrismaRepositorio(prisma),
   contas,
+  usuarios: criarRotasUsuarios(contas),
   jwtSegredo: config.jwtSegredo,
   origensCors: config.origensCors,
 });

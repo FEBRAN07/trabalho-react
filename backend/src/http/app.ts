@@ -42,6 +42,7 @@ export interface Dependencias {
     'buscarPorEmail' | 'buscarPorId' | 'atualizar'
   >;
 
+  usuarios?: Router;
   jwtSegredo: string;
   origensCors?: readonly string[];
 }
@@ -89,7 +90,7 @@ export function criarApp(dep: Dependencias): Express {
   // Todas as demais rotas da API exigem autenticação.
   const api = Router();
 
-  api.use(autenticar(dep.jwtSegredo));
+  api.use(autenticar(dep.jwtSegredo, dep.contas));
 
   // CLIENTES
 
@@ -248,6 +249,8 @@ export function criarApp(dep: Dependencias): Express {
     '/ordens-servico',
     criarRotasOs(ordemServico),
   );
+
+  if (dep.usuarios) api.use('/usuarios', dep.usuarios);
 
   // Rota não encontrada.
   api.use((_req, _res, next) => {

@@ -12,6 +12,8 @@ module.exports = {
     'src/lib/registry.ts',
     'src/lib/api.ts',
     'src/lib/orders.ts',
+    'src/lib/users.ts',
+    'src/components/Users.tsx',
     'src/components/Orders.tsx',
     'src/components/OrderForm.tsx',
     'src/components/SearchPanels.tsx',

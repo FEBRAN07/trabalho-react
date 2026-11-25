@@ -6,11 +6,14 @@ import { createApi } from './lib/api'
 
 const api = createApi('http://localhost:3000/api', 'token')
 
-test('não carrega cadastros locais nem consulta a API sem informar o token', () => {
+test('não carrega cadastros locais nem consulta a API sem fazer login', () => {
   const fetchMock = jest.spyOn(globalThis, 'fetch')
   const html = renderToStaticMarkup(<App />)
-  expect(html).toContain('Informe o acesso à API')
-  expect(html).toContain('Conectar à API')
+  expect(html).toContain('Entrar no SysOS')
+  expect(html).toContain('login-email')
+  expect(html).toContain('login-password')
+  expect(html).toContain('Usuários')
+  expect(html).not.toContain('Conectar à API')
   expect(html).not.toContain('Clientes cadastrados')
   expect(html).not.toContain('Protótipo local')
   for (const storage of [localStorage, sessionStorage]) {

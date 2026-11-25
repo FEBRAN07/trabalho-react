@@ -1,3 +1,4 @@
+import type { User, UserInput, UserProfile } from './users'
 import { validateOrder, type ServiceOrder, type OpenOrder, type OrderInput, type OrderFilters } from './orders'
 import { formatPhone, validateClientSearch, validateId, type Client, type ClientInput, type Equipment, type EquipmentInput, type Errors } from './registry'
 
@@ -10,56 +11,33 @@ export interface EquipmentDto {
 }
 export interface ClientSearchResult { clients: Client[]; offerCreate: boolean; total: number }
 
-export interface Session {
-  token: string;
-  usuario: {
-    id: number;
-    nome: string;
-    email: string;
-    perfil: 'ATENDENTE' | 'TECNICO';
-    ativo: boolean;
-    criadoEm: string;
-  };
+interface UserDto { id: number; nome: string; email: string; perfil: UserProfile; ativo: boolean; criadoEm: string }
+export interface Session { token: string; user: User }
+export function userFromApi(data: UserDto): User {
+  return { id: String(data.id), name: data.nome, email: data.email, profile: data.perfil, active: data.ativo, createdAt: data.criadoEm }
+}
+function userBody(input: UserInput, editing = false) {
+  return JSON.stringify({ nome: input.name.trim(), email: input.email.trim(), perfil: input.profile,
+    ...(!editing || input.password ? { senha: input.password } : {}), ...(editing ? { ativo: input.active } : {}) })
 }
 
-export async function loginFuncionario(
-  baseUrl: string,
-  email: string,
-  senha: string,
-): Promise<Session> {
-  let response: Response;
-
+export async function loginFuncionario(baseUrl: string, email: string, senha: string): Promise<Session> {
+  let response: Response
   try {
-    response = await fetch(
-      `${baseUrl.replace(/\/+$/, '')}/login`,
-      {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, senha }),
-        cache: 'no-store',
-        credentials: 'omit',
-      },
-    );
-  } catch {
-    throw new ApiError(
-      'Não foi possível conectar à API.',
-    );
+    response = await fetch(`${baseUrl.replace(/\/+$/, '')}/login`, {
+      method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim(), senha }), cache: 'no-store', credentials: 'omit',
+    })
+  } catch { throw new ApiError('Não foi possível conectar à API.') }
+  let body
+  try { body = await response.json() }
+  catch { throw new ApiError('A API devolveu uma resposta inválida.', response.status, 'RESPOSTA_INVALIDA') }
+  if (!response.ok) throw new ApiError(body?.erro?.mensagem || 'Falha ao realizar login.', response.status, body?.erro?.codigo)
+  if (typeof body?.token !== 'string' || !body.token.trim() || !body.usuario || !['ATENDENTE', 'TECNICO'].includes(body.usuario.perfil)) {
+    throw new ApiError('A API devolveu uma resposta inválida.', response.status, 'RESPOSTA_INVALIDA')
   }
-
-  const body = await response.json();
-
-  if (!response.ok) {
-    throw new ApiError(
-      body?.erro?.mensagem || 'Falha ao realizar login.',
-      response.status,
-      body?.erro?.codigo,
-    );
-  }
-
-  return body as Session;
+  if (!body.usuario.ativo) throw new ApiError('Este funcionário está inativo.', 401, 'CREDENCIAIS_INVALIDAS')
+  return { token: body.token, user: userFromApi(body.usuario) }
 }
 
 export function clientFromApi(data: ClientDto): Client {
@@ -129,7 +107,7 @@ export function createApi(baseUrl: string, token: string, onUnauthorized?: () =>
         ? problem.detalhes.candidatos.map(clientFromApi) : []
       const openOrders = Array.isArray(problem?.detalhes?.ordensEmAberto)
         ? problem.detalhes.ordensEmAberto.map((order: OpenOrderDto) => ({ number: String(order.numero), status: order.status, problem: order.problemaRelatado, createdAt: order.criadoEm })) : []
-      throw new ApiError(problem?.mensagem || 'Não foi possível concluir a operação.', response.status, problem?.codigo, fields, candidates, openOrders)
+      throw new ApiError((typeof problem === 'string' ? problem : problem?.mensagem) || 'Não foi possível concluir a operação.', response.status, problem?.codigo, fields, candidates, openOrders)
     }
     return body as T
   }
@@ -138,6 +116,22 @@ export function createApi(baseUrl: string, token: string, onUnauthorized?: () =>
     return String(Number(value))
   }
   return {
+    login(email: string, password: string) { return loginFuncionario(base, email, password) },
+    async listUsers(signal?: AbortSignal) {
+      return (await request<UserDto[]>('/usuarios', { signal })).map(userFromApi)
+    },
+    async getUser(userId: string, signal?: AbortSignal) {
+      return userFromApi(await request<UserDto>(`/usuarios/${id(userId)}`, { signal }))
+    },
+    async createUser(input: UserInput) {
+      return userFromApi(await request<UserDto>('/usuarios', { method: 'POST', body: userBody(input) }))
+    },
+    async updateUser(userId: string, input: UserInput) {
+      return userFromApi(await request<UserDto>(`/usuarios/${id(userId)}`, { method: 'PUT', body: userBody(input, true) }))
+    },
+    async deleteUser(userId: string) {
+      await request<{ mensagem: string }>(`/usuarios/${id(userId)}`, { method: 'DELETE' })
+    },
     async createOrder(input: OrderInput, confirmOpen = false): Promise<ServiceOrder> {
       const errors = validateOrder(input)
       if (Object.keys(errors).length) throw new ApiError('Revise os dados da ordem de serviço.', 400, 'DADOS_INVALIDOS', errors)

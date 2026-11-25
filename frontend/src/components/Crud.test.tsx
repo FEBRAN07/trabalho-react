@@ -24,7 +24,7 @@ test('edição de cliente preenche nome e contatos, usa ação de salvar e não 
 
 test('edição de equipamento preserva tipo fora da lista padrão e preenche os dados', () => {
   const html = renderToStaticMarkup(<EquipmentForm client={client} initialEquipment={item} onSave={jest.fn<() => Promise<Equipment>>()} onCreated={jest.fn()} onCancel={jest.fn()} />)
-  expect(html).toContain('<option selected="">Servidor</option>')
+  expect(html).toContain('<option value="Servidor" selected="">Servidor</option>')
   expect(inputTag(html, 'equipment-brand')).toContain('value="Dell"')
   expect(inputTag(html, 'equipment-model')).toContain('value="PowerEdge"')
   expect(inputTag(html, 'equipment-serial')).toContain('value="ABC-123"')
